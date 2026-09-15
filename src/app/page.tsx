@@ -5,9 +5,7 @@ import Link from 'next/link';
 import {
   ShieldCheck,
   QrCode,
-  LayoutDashboard,
   BarChart3,
-  Send,
 } from 'lucide-react';
 import FeedbackForm from '@/components/FeedbackForm';
 import SuccessView from '@/components/SuccessView';
@@ -17,7 +15,6 @@ import { STORE_NAME } from '@/lib/constants';
 export default function HomePage() {
   const [submittedType, setSubmittedType] = useState<FeedbackType | null>(null);
 
-  // Saytga kirgan har bir mijozni hisoblab borish (Tashriflar hisobi)
   useEffect(() => {
     fetch('/api/track', {
       method: 'POST',
@@ -28,19 +25,18 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      {/* Yuqori nozik minimalist header */}
-      <header className="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-white p-0.5 border border-blue-600 shrink-0 flex items-center justify-center">
-              <img
-                src="/logo.png"
-                alt="Comfort Textile"
-                className="w-full h-full object-contain"
-              />
-            </div>
+      {/* Oddiy tabiiy header (Ekranga qotib/fixed bo'lib qolmaydi) */}
+      <header className="border-b border-slate-800/80 bg-slate-950 py-3.5">
+        <div className="max-w-xl mx-auto px-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3">
+            {/* Toza tabiiy logotip (Ortiqcha fiksatsiyalarsiz) */}
+            <img
+              src="/logo.svg"
+              alt="Comfort Textile"
+              className="w-10 h-10 aspect-square rounded-full shrink-0 object-contain"
+            />
             <div>
-              <h1 className="font-extrabold text-sm tracking-tight text-white flex items-center gap-1.5 leading-none">
+              <h1 className="font-extrabold text-sm sm:text-base tracking-tight text-white flex items-center gap-1.5 leading-none">
                 <span className="text-blue-400">COMFORT</span>
                 <span>TEXTILE</span>
               </h1>
@@ -68,7 +64,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Asosiy blok */}
+      {/* Asosiy kontent */}
       <main className="flex-1 max-w-xl w-full mx-auto px-4 py-5 flex flex-col justify-center">
         {submittedType ? (
           <SuccessView
@@ -81,7 +77,7 @@ export default function HomePage() {
             {/* Minimalist qisqa sarlavha */}
             <div className="border-b border-slate-800/80 pb-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-white tracking-tight">
+                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
                   Mebel ustalari va xaridorlar diqqatiga
                 </h2>
                 <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 flex items-center gap-1">
@@ -103,7 +99,7 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 py-3.5 text-center text-[11px] text-slate-500">
+      <footer className="border-t border-slate-900 py-3 text-center text-[11px] text-slate-500">
         <div className="max-w-xl mx-auto px-4 flex items-center justify-between">
           <span>{STORE_NAME} © 2026</span>
           <div className="flex items-center gap-3">

@@ -39,9 +39,11 @@ export default function SuccessView({ onReset, feedbackType }: SuccessViewProps)
 
   return (
     <div className="w-full max-w-md mx-auto text-center py-6 px-4 flex flex-col items-center animate-in fade-in zoom-in-95 duration-300">
-      <div className="w-20 h-20 rounded-full bg-white p-1 border-2 border-blue-600 shadow-xl shadow-blue-600/20 mb-4 flex items-center justify-center">
-        <img src="/logo.svg" alt="Comfort Textile" className="w-full h-full object-contain" />
-      </div>
+      <img
+        src="/logo.svg"
+        alt="Comfort Textile"
+        className="w-20 h-20 aspect-square rounded-full mb-4 object-contain shadow-xl shadow-blue-900/30"
+      />
 
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-300 border border-blue-500/20 mb-3">
         <Send className="w-3 h-3" /> Telegram guruhga yetkazildi

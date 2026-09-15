@@ -129,9 +129,9 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
-      {/* Top Header */}
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      {/* Top Header (Oddiy, fixed emas) */}
+      <header className="border-b border-slate-800 bg-slate-900 py-3">
+        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               href="/"
@@ -140,9 +140,11 @@ export default function AdminPage() {
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-white p-0.5 border border-blue-600 shrink-0">
-                <img src="/logo.png" alt="Comfort Textile" className="w-full h-full object-contain" />
-              </div>
+              <img
+                src="/logo.svg"
+                alt="Comfort Textile"
+                className="w-9 h-9 aspect-square rounded-full shrink-0 object-contain"
+              />
               <div>
                 <h1 className="font-extrabold text-sm sm:text-base text-white leading-none">
                   Comfort Textile Analitika va Boshqaruv
