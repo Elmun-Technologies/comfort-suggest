@@ -10,6 +10,8 @@ import {
   Copy,
   Check,
   Download,
+  Loader2,
+  ImageDown,
   Sparkles,
 } from 'lucide-react';
 import { STORE_NAME } from '@/lib/constants';
@@ -19,6 +21,7 @@ export default function PosterPage() {
   const [qrImgSrc, setQrImgSrc] = useState<string>('');
   const [withLogo, setWithLogo] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState("Bosh do'kon (Kiraverish)");
 
   useEffect(() => {
@@ -64,6 +67,34 @@ export default function PosterPage() {
     a.click();
   };
 
+  // Butun A4 plakat dizaynini (logo + sarlavha + QR + qadamlar)
+  // 300 DPI PNG sifatida serverda yaratib yuklab olamiz
+  const downloadPoster = async () => {
+    if (!qrUrl || downloading) return;
+    setDownloading(true);
+    try {
+      const params = new URLSearchParams({
+        url: qrUrl,
+        logo: String(withLogo),
+        branch: selectedBranch,
+      });
+      const res = await fetch(`/api/poster-image?${params.toString()}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = 'comfort-textile-qr-plakat-A4.png';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+    } catch (err) {
+      console.error('Poster yuklab olishda xato:', err);
+      alert('Plakat yuklab olib bo\'lmadi. Qayta urinib ko\'ring.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* Oddiy boshqaruv paneli (Printda yashiriladi) */}
@@ -81,10 +112,24 @@ export default function PosterPage() {
             <button
               type="button"
               onClick={downloadQrOnly}
+              title="Faqat QR-kodni (PNG) yuklab olish"
               className="px-3 py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-all border border-slate-700"
             >
               <Download className="w-3.5 h-3.5 text-blue-400" />
-              <span className="hidden sm:inline">QR yuklab olish</span>
+              <span className="hidden sm:inline">Faqat QR</span>
+            </button>
+            <button
+              type="button"
+              onClick={downloadPoster}
+              disabled={downloading}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-wait active:scale-95 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition-all shadow-md shadow-emerald-600/30"
+            >
+              {downloading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ImageDown className="w-4 h-4" />
+              )}
+              <span>{downloading ? 'Plakat yaratilmoqda...' : 'Plakatni yuklab olish (A4 PNG)'}</span>
             </button>
             <button
               type="button"
@@ -148,7 +193,7 @@ export default function PosterPage() {
           <div className="w-full flex items-center justify-between border-b-2 border-blue-900 pb-3 mb-2">
             <div className="flex items-center gap-3">
               <img
-                src="/brand-logo.png?v=7"
+                src="/logo.png"
                 alt="Comfort Textile"
                 className="w-14 h-14 aspect-square rounded-full shrink-0 object-contain"
               />

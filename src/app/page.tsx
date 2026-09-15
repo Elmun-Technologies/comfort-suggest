@@ -31,7 +31,7 @@ export default function HomePage() {
           <Link href="/" className="flex items-center gap-3">
             {/* Toza tabiiy logotip (Ortiqcha fiksatsiyalarsiz) */}
             <img
-              src="/brand-logo.png?v=7"
+              src="/logo.png"
               alt="Comfort Textile"
               className="w-10 h-10 aspect-square rounded-full shrink-0 object-contain"
             />

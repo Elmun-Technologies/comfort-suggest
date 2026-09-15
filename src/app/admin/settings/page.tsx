@@ -162,7 +162,7 @@ export default function SettingsPage() {
             </Link>
             <div className="flex items-center gap-2.5">
               <img
-                src="/brand-logo.png?v=7"
+                src="/logo.png"
                 alt="Comfort Textile"
                 className="w-9 h-9 aspect-square rounded-full shrink-0 object-contain"
               />
