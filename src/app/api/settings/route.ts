@@ -4,9 +4,10 @@ import { getTelegramConfig, saveTelegramConfig } from '@/lib/storage';
 export async function GET() {
   const config = getTelegramConfig();
   const isProd = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
-  const envToken = process.env.TELEGRAM_BOT_TOKEN || '';
-  const envChatId = process.env.TELEGRAM_CHAT_ID || '';
+  const envToken = String(process.env.TELEGRAM_BOT_TOKEN || '').trim();
+  const envChatId = String(process.env.TELEGRAM_CHAT_ID || '').trim();
 
+  // Debug uchun qo'shimcha ma'lumot
   return NextResponse.json({
     success: true,
     data: config,
@@ -14,7 +15,11 @@ export async function GET() {
       isProd,
       hasEnvToken: !!envToken,
       hasEnvChatId: !!envChatId,
+      envTokenPreview: envToken ? `${envToken.substring(0, 10)}...` : null,
+      envChatIdPreview: envChatId || null,
+      effectiveEnabled: config.enabled,
       dataDir: isProd ? '/tmp/comfort-data' : 'data/',
+      timestamp: new Date().toISOString(),
     }
   });
 }
@@ -24,16 +29,26 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { botToken, chatId, enabled } = body;
 
-    if (!botToken || !chatId) {
+    const cleanToken = String(botToken || '').trim();
+    const cleanChatId = String(chatId || '').trim();
+
+    if (!cleanToken || !cleanChatId) {
       return NextResponse.json(
-        { success: false, error: "Bot Token va Chat ID kiritilishi shart" },
+        { success: false, error: "Bot Token va Chat ID kiritilishi shart (bo'sh bo'lmasligi kerak)" },
+        { status: 400 }
+      );
+    }
+
+    if (!cleanToken.includes(':')) {
+      return NextResponse.json(
+        { success: false, error: "Bot token formati noto'g'ri. ':' belgisi bo'lishi kerak." },
         { status: 400 }
       );
     }
 
     const newConfig = {
-      botToken: (botToken || '').trim(),
-      chatId: (chatId || '').trim(),
+      botToken: cleanToken,
+      chatId: cleanChatId,
       enabled: enabled ?? true,
       dailyReportTime: '20:00',
     };

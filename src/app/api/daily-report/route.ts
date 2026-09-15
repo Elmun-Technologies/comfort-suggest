@@ -20,9 +20,24 @@ export async function POST(req: NextRequest) {
     const reportData = getDailyReportData(date);
     const tgConfig = getTelegramConfig();
 
+    console.log(`[DailyReport] Config: hasToken=${!!tgConfig.botToken} hasChat=${!!tgConfig.chatId} enabled=${tgConfig.enabled}`);
+
+    if (!tgConfig.botToken || !tgConfig.chatId) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Telegram sozlanmagan. .env da TELEGRAM_BOT_TOKEN va TELEGRAM_CHAT_ID ni kiriting yoki /admin/settings dan saqlang.",
+        config: {
+          hasToken: !!tgConfig.botToken,
+          hasChatId: !!tgConfig.chatId,
+          enabled: tgConfig.enabled
+        }
+      }, { status: 400 });
+    }
+
     const result = await sendDailyReportToTelegram(reportData, tgConfig);
     return NextResponse.json(result);
   } catch (err: any) {
+    console.error('[DailyReport] Error:', err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

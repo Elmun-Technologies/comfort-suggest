@@ -65,17 +65,35 @@ export async function POST(req: NextRequest) {
     // Mahalliy faylga saqlash
     saveFeedback(newItem);
 
-    // Telegramga darhol yuborish
+    // Telegramga darhol yuborish - FIXED: enabled false bo'lsa ham token mavjud bo'lsa yuborishga harakat qilamiz
     const tgConfig = getTelegramConfig();
-    let tgResult = { success: true };
-    if (tgConfig.enabled && tgConfig.botToken && tgConfig.chatId) {
+    let tgResult: any = { success: true, mocked: true };
+    const hasToken = Boolean(String(tgConfig.botToken || '').trim() && String(tgConfig.chatId || '').trim());
+    
+    if (hasToken) {
+      // Agar token mavjud bo'lsa, har doim yuborishga harakat qilamiz (enabled false bo'lsa ham, chunki storage fix enabled true qiladi)
+      console.log(`[Feedback] Telegramga yuborilmoqda: enabled=${tgConfig.enabled} hasToken=${hasToken} chatId=${tgConfig.chatId?.substring(0, 5)}...`);
       tgResult = await sendFeedbackToTelegram(newItem, tgConfig);
+      if (!tgResult.success) {
+        console.error('[Feedback] Telegramga yuborishda xatolik:', tgResult.error);
+      } else {
+        console.log('[Feedback] Telegramga muvaffaqiyatli yuborildi:', tgResult.messageId);
+      }
+    } else {
+      console.log('[Feedback] Telegram token/chatId mavjud emas, faqat lokalga saqlandi');
+      tgResult = { success: false, error: 'Telegram sozlanmagan' };
     }
 
     return NextResponse.json({
       success: true,
       data: newItem,
       telegramSent: tgResult.success,
+      telegramError: tgResult.error || null,
+      telegramConfig: {
+        hasToken: Boolean(tgConfig.botToken),
+        hasChatId: Boolean(tgConfig.chatId),
+        enabled: tgConfig.enabled,
+      }
     });
   } catch (error: any) {
     console.error('Error handling feedback POST:', error);
