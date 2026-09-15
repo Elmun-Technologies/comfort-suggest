@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Matn arkalari (yoylari) -->
+    <path id="comfortPath" d="M 92,250 A 158,158 0 0,1 408,250" fill="none" />
+    <path id="textilePath" d="M 408,250 A 158,158 0 0,1 92,250" fill="none" />
+  </defs>
+
+  <!-- Orqa fon oq doira va tashqi qalin ramka -->
+  <circle cx="250" cy="250" r="236" fill="#ffffff" stroke="#1d3b8a" stroke-width="15" />
+
+  <!-- Ichki ingichka chegara halqasi -->
+  <circle cx="250" cy="250" r="190" fill="none" stroke="#1d3b8a" stroke-width="4.5" />
+
+  <!-- Yozuv: COMFORT -->
+  <text font-family="'Impact', 'Arial Black', -apple-system, sans-serif" font-weight="900" font-size="46" fill="#1d3b8a" letter-spacing="4.5">
+    <textPath href="#comfortPath" startOffset="50%" text-anchor="middle">
+      COMFORT
+    </textPath>
+  </text>
+
+  <!-- Yozuv: TEXTILE -->
+  <text font-family="'Impact', 'Arial Black', -apple-system, sans-serif" font-weight="900" font-size="44" fill="#1d3b8a" letter-spacing="4">
+    <textPath href="#textilePath" startOffset="50%" text-anchor="middle">
+      TEXTILE
+    </textPath>
+  </text>
+
+  <!-- Markazdagi Divan (Sofa) ikonkasi -->
+  <g transform="translate(250, 260) scale(1.15)">
+    <!-- Divan umumiy silueti (#1d3b8a) -->
+    <!-- Chap va o'ng suyanchiqlar, o'rindiq, qo'ltiqlar -->
+    
+    <!-- Chap qo'ltiq (Armrest left) -->
+    <path d="M -88,-15 C -88,-25 -82,-28 -74,-28 L -58,-28 C -54,-28 -52,-25 -52,-20 L -52,18 C -52,22 -55,24 -60,24 L -82,24 C -86,24 -88,20 -88,15 Z" fill="#1d3b8a" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" />
+
+    <!-- O'ng qo'ltiq (Armrest right) -->
+    <path d="M 52,-15 C 52,-25 56,-28 64,-28 L 80,-28 C 86,-28 88,-25 88,-20 L 88,15 C 88,20 86,24 80,24 L 58,24 C 54,24 52,20 52,15 Z" fill="#1d3b8a" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" />
+
+    <!-- Orqa suyanchiq (Back cushions) -->
+    <!-- Chap orqa yostiq -->
+    <path d="M -52,-15 L -52,-42 C -52,-52 -44,-58 -32,-58 L -4,-58 C 0,-58 2,-55 2,-48 L 2,-12 L -52,-12 Z" fill="#1d3b8a" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" />
+    
+    <!-- O'ng orqa yostiq -->
+    <path d="M 2,-12 L 2,-48 C 2,-55 4,-58 8,-58 L 36,-58 C 48,-58 52,-50 52,-40 L 52,-15 L 2,-15 Z" fill="#1d3b8a" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" />
+
+    <!-- O'rindiq (Seat cushions) -->
+    <!-- Chap o'rindiq -->
+    <path d="M -54,-14 L 0,-14 L 0,16 L -54,16 Z" fill="#1d3b8a" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" />
+
+    <!-- O'ng o'rindiq -->
+    <path d="M 0,-14 L 54,-14 L 54,16 L 0,16 Z" fill="#1d3b8a" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" />
+
+    <!-- Pastki asos karkasi -->
+    <path d="M -70,16 L 70,16 C 73,16 75,18 75,22 L 75,28 C 75,30 73,32 70,32 L -70,32 C -73,32 -75,30 -75,28 L -75,22 C -75,18 -73,16 -70,16 Z" fill="#1d3b8a" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round" />
+
+    <!-- Oyoqlar -->
+    <!-- Chap old oyoq -->
+    <polygon points="-62,32 -52,32 -54,48 -66,48" fill="#1d3b8a" />
+    <!-- Chap orqa oyoq -->
+    <polygon points="-38,32 -30,32 -32,45 -41,45" fill="#1d3b8a" opacity="0.9" />
+    <!-- O'ng old oyoq -->
+    <polygon points="52,32 62,32 66,48 54,48" fill="#1d3b8a" />
+    <!-- O'ng orqa oyoq -->
+    <polygon points="30,32 38,32 41,45 32,45" fill="#1d3b8a" opacity="0.9" />
+  </g>
+</svg>

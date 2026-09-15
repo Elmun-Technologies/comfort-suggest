@@ -1,12 +1,12 @@
 import { FeedbackDepartment, FeedbackType, RatingScore } from '@/types';
 
-export const STORE_NAME = "Comfort Mebel Furnitura";
-export const STORE_TAGLINE = "Mebelchilar uchun barcha mahsulotlar bir joyda";
+export const STORE_NAME = "Comfort Textile";
+export const STORE_TAGLINE = "Mebel matolari, porolon va furnituralar markazi";
 
 export const STORE_BRANCHES = [
   "Bosh do'kon (Markaziy)",
-  "2-filial (Mebelchilar bozori)",
-  "3-filial (Ombor-do'kon)",
+  "Mebelchilar bozori filiali",
+  "Ulgurji ombor-do'kon",
 ];
 
 export const FEEDBACK_TYPES: {
@@ -21,7 +21,7 @@ export const FEEDBACK_TYPES: {
   {
     id: 'complaint',
     title: "E'tiroz / Shikoyat",
-    subtitle: "Muammo yoki kamchilik bo'yicha",
+    subtitle: "Kamchilik yoki muammo bo'yicha",
     iconName: 'AlertTriangle',
     badgeColor: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
     bgActive: 'bg-rose-950/40 border-rose-500 text-rose-100',
@@ -30,16 +30,16 @@ export const FEEDBACK_TYPES: {
   {
     id: 'suggestion',
     title: "Taklif / Yangilik",
-    subtitle: "Yangi tovar yoki qulaylik haqida",
+    subtitle: "Yangi mato, rang yoki mahsulot haqida",
     iconName: 'Lightbulb',
-    badgeColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-    bgActive: 'bg-amber-950/40 border-amber-500 text-amber-100',
-    borderColor: 'border-amber-500',
+    badgeColor: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    bgActive: 'bg-blue-950/50 border-blue-500 text-blue-100',
+    borderColor: 'border-blue-500',
   },
   {
     id: 'praise',
     title: "Rahmat / Minnatdorchilik",
-    subtitle: "Xizmat yoki tovar yoqqan bo'lsa",
+    subtitle: "Sifat yoki xizmat yoqqan bo'lsa",
     iconName: 'Heart',
     badgeColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
     bgActive: 'bg-emerald-950/40 border-emerald-500 text-emerald-100',
@@ -56,8 +56,8 @@ export const RATINGS: {
   { score: 1, emoji: '😡', label: 'Juda yomon', color: 'hover:text-red-400' },
   { score: 2, emoji: '🙁', label: 'Yomon', color: 'hover:text-orange-400' },
   { score: 3, emoji: '😐', label: "O'rtacha", color: 'hover:text-yellow-400' },
-  { score: 4, emoji: '😊', label: 'Yaxshi', color: 'hover:text-lime-400' },
-  { score: 5, emoji: '🤩', label: "A'lo darajada", color: 'hover:text-emerald-400' },
+  { score: 4, emoji: '😊', label: 'Yaxshi', color: 'hover:text-blue-400' },
+  { score: 5, emoji: '🤩', label: "A'lo darajada", color: 'hover:text-blue-300' },
 ];
 
 export const DEPARTMENTS: {
@@ -67,51 +67,51 @@ export const DEPARTMENTS: {
   icon: string;
 }[] = [
   {
-    id: 'hardware',
-    title: 'Furnitura va mexanizmlar',
-    examples: 'Petlyalar, relslar, koʻtargichlar, dastaklar, qulflar',
-    icon: 'Hammer',
-  },
-  {
-    id: 'boards',
-    title: 'DSP, MDF va Stol usti',
-    examples: 'Laminatsiya, kromka, qirqish sifati, list oʻlchami',
+    id: 'boards', // Mato va Tekstil
+    title: 'Mebel matolari va Eko-teri',
+    examples: 'Velur, jakkard, rogojka, bukle, eko-koja, ranglar tanlovi, sifat',
     icon: 'Layers',
   },
   {
-    id: 'warehouse',
-    title: 'Ombor va Yuk ortish',
-    examples: 'Yuk kutish vaqti, yuklashda shikastlanish, xodimlar',
+    id: 'hardware', // Mexanizm va Furnitura
+    title: 'Divan mexanizmlari va Furnitura',
+    examples: 'Tik-tak, akkordeon, yevroknijka, gazlift, oyoqlar, skobalar',
+    icon: 'Hammer',
+  },
+  {
+    id: 'warehouse', // Ombor va Kesim
+    title: 'Ombor va Matoni kesish',
+    examples: 'Metrini oʻlchash, qirqish aniqligi, kutish vaqti, tovar berish',
     icon: 'Package',
   },
   {
-    id: 'pricing',
+    id: 'pricing', // Narxlar
     title: 'Narxlar va Chegirmalar',
-    examples: 'Ulgurji narxlar, hisob-kitob, toʻlov usullari',
+    examples: 'Metr narxi, ulgurji chegirmalar, hisob-kitob, toʻlov turlari',
     icon: 'CircleDollarSign',
   },
   {
-    id: 'staff',
+    id: 'staff', // Xodimlar
     title: 'Sotuvchi va Maslahatchilar',
-    examples: 'Muomala madaniyati, tushuntirish, eʼtiborsizlik',
+    examples: 'Mato tanlashda yordam, muomala madaniyati, eʼtiborsizlik',
     icon: 'Users',
   },
   {
-    id: 'cashier',
+    id: 'cashier', // Kassa
     title: 'Kassa va Navbatlar',
-    examples: 'Kassada uzoq kutish, chek va hisobdagi noaniqlik',
+    examples: 'Kassada kutish, hisob-kitobdagi noaniqlik, chek',
     icon: 'Receipt',
   },
   {
-    id: 'delivery',
-    title: 'Yetkazib berish xizmati',
-    examples: 'Vaqtida kelmaslik, mashinaga yuklash, shikastlanish',
+    id: 'delivery', // Dostavka
+    title: 'Yetkazib berish (Dostavka)',
+    examples: 'Rulon va porolonlarni yetkazish tezligi, shikastlanish',
     icon: 'Truck',
   },
   {
-    id: 'other',
+    id: 'other', // Boshqa
     title: 'Boshqa masala',
-    examples: 'Tozalik, mashina turargohi, umumiy takliflar',
+    examples: 'Namunalar stendlari, doʻkon qulayligi, umumiy takliflar',
     icon: 'HelpCircle',
   },
 ];

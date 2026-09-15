@@ -59,10 +59,10 @@ export async function sendFeedbackToTelegram(
   const ratingText = getRatingStars(feedback.rating);
 
   const captionHtml = `
-<b>🔔 YANGI ANONIM MUROJAAT</b>
+<b>🛋 COMFORT TEXTILE — ANONIM MUROJAAT</b>
 ━━━━━━━━━━━━━━━━━━━━
 <b>📌 Turi:</b> ${typeText}
-<b>🏢 Yoʻnalish:</b> ${deptTitle}
+<b>🏬 Yoʻnalish:</b> ${deptTitle}
 <b>⭐ Baho:</b> ${ratingText}
 <b>📍 Filial:</b> ${feedback.storeBranch || "Bosh do'kon"}
 <b>🕒 Vaqt:</b> ${formattedDate}
@@ -196,14 +196,14 @@ export async function testTelegramBot(token: string, chatId: string): Promise<{ 
     }
 
     const testMsg = `
-✅ <b>COMFORT MEBEL BOTI ULANDI!</b>
+✅ <b>COMFORT TEXTILE BOTI ULANDI!</b>
 ━━━━━━━━━━━━━━━━━━━━
 Ushbu guruh anonim e'tiroz va takliflarni qabul qilishga muvaffaqiyatli sozlandi.
 
 🤖 <b>Bot nomi:</b> @${meData.result.username}
 🕒 <b>Vaqt:</b> ${formatDate(new Date().toISOString())}
 ━━━━━━━━━━━━━━━━━━━━
-Do'kondagi QR-kod orqali yuborilgan barcha murojaatlar shu yerda aks etadi.
+Do'kondagi QR-kod orqali mebel ustalari va xaridorlar yuborgan barcha murojaatlar shu yerda aks etadi.
     `.trim();
 
     const sendRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {

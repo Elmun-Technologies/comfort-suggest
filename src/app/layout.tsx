@@ -2,8 +2,11 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Comfort Mebel — Anonim Taklif va E'tirozlar",
-  description: "Mebel ustalari va xaridorlar uchun anonim fikr-mulohaza platformasi",
+  title: "Comfort Textile — Anonim Taklif va E'tirozlar",
+  description: "Comfort Textile: mebel matolari, porolon va sifatli furnituralar bo'yicha anonim fikr-mulohaza markazi",
+  icons: {
+    icon: "/logo.svg",
+  },
 };
 
 export const viewport: Viewport = {
@@ -11,7 +14,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#0f172a",
+  themeColor: "#1d3b8a",
 };
 
 export default function RootLayout({
@@ -21,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="uz" className="h-full">
-      <body className="min-h-full bg-slate-950 text-slate-100 font-sans antialiased selection:bg-amber-500 selection:text-white">
+      <body className="min-h-full bg-slate-950 text-slate-100 font-sans antialiased selection:bg-blue-600 selection:text-white">
         {children}
       </body>
     </html>

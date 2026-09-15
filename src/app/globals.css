@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090d16;
+  --background: #090e1a;
   --foreground: #f8fafc;
+  --primary-blue: #1d3b8a;
+  --primary-light: #2563eb;
 }
 
 body {
@@ -19,14 +21,14 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #0b1329;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #1e3a8a;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #2563eb;
 }
 
 /* Print Styles */
@@ -37,7 +39,7 @@ body {
   }
   @page {
     size: A4 portrait;
-    margin: 1cm;
+    margin: 0.8cm;
   }
   .poster-card {
     width: 100% !important;
@@ -45,6 +47,6 @@ body {
     max-width: 100% !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 1.5rem !important;
+    padding: 1rem !important;
   }
 }

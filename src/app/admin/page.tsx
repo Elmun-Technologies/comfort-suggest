@@ -10,20 +10,16 @@ import {
   Settings,
   QrCode,
   ArrowLeft,
-  CheckCircle2,
   Clock,
   Filter,
   RefreshCw,
   Layers,
   Volume2,
   Image as ImageIcon,
-  Check,
-  Send,
   Building2,
-  ChevronDown,
 } from 'lucide-react';
-import { FeedbackDepartment, FeedbackItem, FeedbackStatus, FeedbackType } from '@/types';
-import { DEPARTMENTS, FEEDBACK_TYPES, RATINGS, STORE_NAME } from '@/lib/constants';
+import { FeedbackDepartment, FeedbackItem, FeedbackStatus } from '@/types';
+import { DEPARTMENTS, RATINGS, STORE_NAME } from '@/lib/constants';
 
 export default function AdminPage() {
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
@@ -72,7 +68,6 @@ export default function AdminPage() {
     }
   };
 
-  // Statistika hisoblash
   const totalCount = feedbacks.length;
   const complaintCount = feedbacks.filter((f) => f.type === 'complaint').length;
   const suggestionCount = feedbacks.filter((f) => f.type === 'suggestion').length;
@@ -80,7 +75,6 @@ export default function AdminPage() {
   const avgRating = totalCount > 0 ? (feedbacks.reduce((acc, f) => acc + f.rating, 0) / totalCount).toFixed(1) : '5.0';
   const resolvedCount = feedbacks.filter((f) => f.status === 'resolved').length;
 
-  // Filtrlash
   const filteredFeedbacks = feedbacks.filter((item) => {
     if (filterType !== 'all' && item.type !== filterType) return false;
     if (filterStatus !== 'all' && item.status !== filterStatus) return false;
@@ -96,8 +90,8 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
+      <header className="border-b border-blue-950/60 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               href="/"
@@ -106,14 +100,16 @@ export default function AdminPage() {
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
-            <div>
-              <h1 className="font-extrabold text-base tracking-tight text-white flex items-center gap-2">
-                <span>Rahbariyat Paneli</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                  Monitoring
-                </span>
-              </h1>
-              <p className="text-[11px] text-slate-400">{STORE_NAME} — Anonim tahlil</p>
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-full bg-white p-0.5 border border-blue-600 flex items-center justify-center shrink-0">
+                <img src="/logo.svg" alt="Comfort Textile" className="w-full h-full object-contain" />
+              </div>
+              <div>
+                <h1 className="font-extrabold text-sm sm:text-base tracking-tight text-white flex items-center gap-2 leading-none">
+                  <span>Comfort Textile Rahbariyat Paneli</span>
+                </h1>
+                <p className="text-[11px] text-slate-400 mt-0.5">Murojaatlar va Shikoyatlar Nazorati</p>
+              </div>
             </div>
           </div>
 
@@ -129,12 +125,12 @@ export default function AdminPage() {
               href="/poster"
               className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors"
             >
-              <QrCode className="w-3.5 h-3.5 text-amber-400" />
+              <QrCode className="w-3.5 h-3.5 text-blue-400" />
               <span className="hidden sm:inline">QR Plakat</span>
             </Link>
             <Link
               href="/admin/settings"
-              className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-amber-500/20"
+              className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-blue-600/30"
             >
               <Settings className="w-3.5 h-3.5" />
               <span>Telegram Sozlamalari</span>
@@ -146,7 +142,7 @@ export default function AdminPage() {
       {/* Main Container */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 space-y-6">
         
-        {/* Yuqori KPI / Statistika kartochkalari */}
+        {/* KPI kartochkalari */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
             <p className="text-xs font-medium text-slate-400">Jami Murojaatlar</p>
@@ -165,13 +161,13 @@ export default function AdminPage() {
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-amber-950/20 border border-amber-500/30">
+          <div className="p-4 rounded-2xl bg-blue-950/30 border border-blue-500/30">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-amber-300">Takliflar</p>
-              <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+              <p className="text-xs font-medium text-blue-300">Takliflar</p>
+              <Lightbulb className="w-3.5 h-3.5 text-blue-400" />
             </div>
-            <p className="text-2xl font-black text-amber-200 mt-1">{suggestionCount}</p>
-            <p className="text-[10px] text-amber-400/80 mt-0.5">Yangi g'oyalar</p>
+            <p className="text-2xl font-black text-blue-200 mt-1">{suggestionCount}</p>
+            <p className="text-[10px] text-blue-400/80 mt-0.5">Yangi matolar/g'oyalar</p>
           </div>
 
           <div className="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30">
@@ -180,12 +176,12 @@ export default function AdminPage() {
               <Heart className="w-3.5 h-3.5 text-emerald-400" />
             </div>
             <p className="text-2xl font-black text-emerald-200 mt-1">{praiseCount}</p>
-            <p className="text-[10px] text-emerald-400/80 mt-0.5">Xizmat yoqqan</p>
+            <p className="text-[10px] text-emerald-400/80 mt-0.5">Xizmat ma'qul kelgan</p>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 col-span-2 sm:col-span-1">
             <p className="text-xs font-medium text-slate-400">O'rtacha Baho</p>
-            <p className="text-2xl font-black text-amber-400 mt-1 flex items-center gap-1">
+            <p className="text-2xl font-black text-blue-400 mt-1 flex items-center gap-1">
               <span>{avgRating}</span>
               <span className="text-xs font-normal text-slate-400">/ 5.0</span>
             </p>
@@ -199,29 +195,27 @@ export default function AdminPage() {
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-slate-400 flex items-center gap-1">
-              <Filter className="w-3.5 h-3.5 text-amber-400" />
+              <Filter className="w-3.5 h-3.5 text-blue-400" />
               <span>Filtr:</span>
             </span>
 
-            {/* Turi bo'yicha */}
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 focus:outline-none focus:border-amber-500"
+              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500"
             >
               <option value="all">Barcha turlar</option>
               <option value="complaint">🔴 Faqat E'tirozlar</option>
-              <option value="suggestion">🟡 Faqat Takliflar</option>
+              <option value="suggestion">🔵 Faqat Takliflar</option>
               <option value="praise">🟢 Faqat Rahmatlar</option>
             </select>
 
-            {/* Bo'lim bo'yicha */}
             <select
               value={filterDept}
               onChange={(e) => setFilterDept(e.target.value)}
-              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 focus:outline-none focus:border-amber-500"
+              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500"
             >
-              <option value="all">Barcha bo'limlar</option>
+              <option value="all">Barcha tovarlar/bo'limlar</option>
               {DEPARTMENTS.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.title}
@@ -229,11 +223,10 @@ export default function AdminPage() {
               ))}
             </select>
 
-            {/* Holat bo'yicha */}
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 focus:outline-none focus:border-amber-500"
+              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500"
             >
               <option value="all">Barcha holatlar</option>
               <option value="new">⏳ Yangi</option>
@@ -254,7 +247,7 @@ export default function AdminPage() {
           </div>
         ) : filteredFeedbacks.length === 0 ? (
           <div className="py-20 text-center bg-slate-900/40 border border-dashed border-slate-800 rounded-3xl p-8">
-            <p className="text-slate-400 font-semibold text-sm">Hozircha bunday murojaat topilmadi</p>
+            <p className="text-slate-400 font-semibold text-sm">Hozircha bunday murojaat yo'q</p>
             <p className="text-xs text-slate-500 mt-1">Filtr parametrlarini o'zgartirib ko'ring.</p>
           </div>
         ) : (
@@ -266,19 +259,18 @@ export default function AdminPage() {
               return (
                 <div
                   key={item.id}
-                  className="bg-slate-900 border border-slate-800/90 hover:border-slate-700 rounded-2xl p-5 transition-all shadow-md space-y-4"
+                  className="bg-slate-900 border border-slate-800/90 hover:border-blue-900/60 rounded-2xl p-5 transition-all shadow-md space-y-4"
                 >
-                  {/* Kartochka Tepasi: Turi, Bo'lim, Vaqt */}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
                     <div className="flex flex-wrap items-center gap-2">
                       {item.type === 'complaint' && (
                         <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5" /> E'tiroz / Shikoyat
+                          <AlertTriangle className="w-3.5 h-3.5" /> E'tiroz
                         </span>
                       )}
                       {item.type === 'suggestion' && (
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
-                          <Lightbulb className="w-3.5 h-3.5" /> Taklif / Yangilik
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center gap-1.5">
+                          <Lightbulb className="w-3.5 h-3.5" /> Taklif
                         </span>
                       )}
                       {item.type === 'praise' && (
@@ -298,7 +290,7 @@ export default function AdminPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1 text-xs text-amber-400 font-bold bg-slate-800 px-2 py-1 rounded-lg">
+                      <div className="flex items-center gap-1 text-xs text-blue-400 font-bold bg-slate-800 px-2 py-1 rounded-lg">
                         <span>{ratingData?.emoji}</span>
                         <span>{item.rating}/5</span>
                       </div>
@@ -315,17 +307,15 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Murojaat Matni */}
                   <div className="text-sm text-slate-200 leading-relaxed font-normal bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/60">
                     {item.text || <i className="text-slate-500">(Faqat media yoki ovozli xabar)</i>}
                   </div>
 
-                  {/* Audio va Rasm mavjud bo'lsa */}
                   {(item.audioUrl || item.imageUrl) && (
                     <div className="flex flex-wrap items-center gap-4 pt-1">
                       {item.audioUrl && (
                         <div className="flex items-center gap-2 bg-slate-800 p-2 rounded-xl border border-slate-700">
-                          <Volume2 className="w-4 h-4 text-amber-400" />
+                          <Volume2 className="w-4 h-4 text-blue-400" />
                           <audio controls src={item.audioUrl} className="h-8 w-60" />
                         </div>
                       )}
@@ -344,7 +334,6 @@ export default function AdminPage() {
                     </div>
                   )}
 
-                  {/* Pastki Qism: Holatni boshqarish */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/60 text-xs">
                     <div className="flex items-center gap-2">
                       <span className="text-slate-400">Holati:</span>

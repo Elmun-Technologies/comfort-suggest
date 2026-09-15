@@ -12,13 +12,12 @@ interface SuccessViewProps {
 
 export default function SuccessView({ onReset, feedbackType }: SuccessViewProps) {
   useEffect(() => {
-    // Chiroyli confetti animatsiyasi
     try {
       confetti({
         particleCount: 70,
         spread: 60,
         origin: { y: 0.6 },
-        colors: ['#f59e0b', '#10b981', '#38bdf8', '#fb7185'],
+        colors: ['#1d3b8a', '#2563eb', '#10b981', '#38bdf8'],
       });
     } catch {
       // Ignore if confetti fails
@@ -39,31 +38,31 @@ export default function SuccessView({ onReset, feedbackType }: SuccessViewProps)
   };
 
   return (
-    <div className="w-full max-w-md mx-auto text-center py-8 px-4 flex flex-col items-center animate-in fade-in zoom-in-95 duration-300">
-      <div className="w-20 h-20 bg-emerald-500/10 border-2 border-emerald-500/30 rounded-3xl flex items-center justify-center text-emerald-400 mb-6 shadow-xl shadow-emerald-500/10">
-        <CheckCircle2 className="w-10 h-10" />
+    <div className="w-full max-w-md mx-auto text-center py-6 px-4 flex flex-col items-center animate-in fade-in zoom-in-95 duration-300">
+      <div className="w-20 h-20 rounded-full bg-white p-1 border-2 border-blue-600 shadow-xl shadow-blue-600/20 mb-4 flex items-center justify-center">
+        <img src="/logo.svg" alt="Comfort Textile" className="w-full h-full object-contain" />
       </div>
 
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 mb-3">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-300 border border-blue-500/20 mb-3">
         <Send className="w-3 h-3" /> Telegram guruhga yetkazildi
       </span>
 
-      <h2 className="text-2xl font-bold text-slate-100 tracking-tight mb-2">
+      <h2 className="text-2xl font-black text-slate-100 tracking-tight mb-2">
         {getHeading()}
       </h2>
 
-      <p className="text-sm text-slate-300 mb-6 leading-relaxed max-w-xs">
-        Sizning fikringiz darhol kompaniya rahbariyati va masʼul menejerlariga yuborildi. Kamchiliklar albatta bartaraf etiladi!
+      <p className="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed max-w-xs">
+        Sizning murojaatingiz to'g'ridan-to'g'ri {STORE_NAME} rahbariyati va masʼul menejerlariga yetkazildi. Kamchiliklar albatta bartaraf etiladi!
       </p>
 
-      <div className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl p-4 mb-8 text-left flex items-start gap-3">
-        <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+      <div className="w-full bg-slate-900 border border-blue-900/40 rounded-2xl p-4 mb-6 text-left flex items-start gap-3">
+        <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 mt-0.5">
           <ShieldCheck className="w-4 h-4" />
         </div>
         <div>
-          <p className="text-xs font-semibold text-slate-200">100% Anonimlik kafolati</p>
+          <p className="text-xs font-bold text-slate-200">100% Anonimlik kafolati</p>
           <p className="text-[11px] text-slate-400 mt-0.5 leading-normal">
-            Hech qanday shaxsiy maʼlumotingiz saqlanmadi. Xolis va samimiy fikringiz uchun {STORE_NAME} jamoasi minnatdorlik bildiradi.
+            Hech qanday shaxsiy maʼlumotingiz saqlanmadi. Xolis va samimiy fikringiz uchun {STORE_NAME} jamoasi minnatdorchilik bildiradi.
           </p>
         </div>
       </div>
@@ -71,7 +70,7 @@ export default function SuccessView({ onReset, feedbackType }: SuccessViewProps)
       <button
         type="button"
         onClick={onReset}
-        className="w-full py-3.5 px-6 bg-slate-800 hover:bg-slate-700 active:scale-[0.98] border border-slate-700 text-slate-200 font-medium rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md"
+        className="w-full py-3.5 px-6 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-bold rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 text-xs"
       >
         <ArrowLeft className="w-4 h-4" />
         <span>Yangi murojaat qoldirish</span>
