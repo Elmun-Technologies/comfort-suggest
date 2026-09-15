@@ -140,7 +140,7 @@ export default function PosterPage() {
           <div className="w-full flex items-center justify-between border-b-2 border-blue-900 pb-3 mb-2">
             <div className="flex items-center gap-3">
               <img
-                src="/logo.svg"
+                src="/brand-logo.png?v=7"
                 alt="Comfort Textile"
                 className="w-14 h-14 aspect-square rounded-full shrink-0 object-contain"
               />

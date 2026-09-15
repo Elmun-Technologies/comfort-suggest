@@ -141,7 +141,7 @@ export default function AdminPage() {
             </Link>
             <div className="flex items-center gap-2">
               <img
-                src="/logo.svg"
+                src="/brand-logo.png?v=7"
                 alt="Comfort Textile"
                 className="w-9 h-9 aspect-square rounded-full shrink-0 object-contain"
               />
