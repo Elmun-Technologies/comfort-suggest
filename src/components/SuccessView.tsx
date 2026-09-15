@@ -40,7 +40,7 @@ export default function SuccessView({ onReset, feedbackType }: SuccessViewProps)
   return (
     <div className="w-full max-w-md mx-auto text-center py-6 px-4 flex flex-col items-center animate-in fade-in zoom-in-95 duration-300">
       <img
-        src="/brand-logo.png?v=7"
+        src="/logo.png"
         alt="Comfort Textile"
         className="w-20 h-20 aspect-square rounded-full mb-4 object-contain shadow-xl shadow-blue-900/30"
       />

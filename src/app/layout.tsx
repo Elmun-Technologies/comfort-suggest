@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Comfort Textile — Anonim Taklif va E'tirozlar",
   description: "Comfort Textile: mebel matolari, porolon va sifatli furnituralar bo'yicha anonim fikr-mulohaza markazi",
   icons: {
-    icon: "/brand-logo.png?v=7",
+    icon: "/logo.png",
   },
 };
 
