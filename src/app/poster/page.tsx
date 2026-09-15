@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import QRCode from 'qrcode';
 import {
   Printer,
   ArrowLeft,
@@ -11,12 +10,14 @@ import {
   Copy,
   Check,
   Download,
+  Sparkles,
 } from 'lucide-react';
 import { STORE_NAME } from '@/lib/constants';
 
 export default function PosterPage() {
   const [qrUrl, setQrUrl] = useState('');
-  const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [qrImgSrc, setQrImgSrc] = useState<string>('');
+  const [withLogo, setWithLogo] = useState(true);
   const [copied, setCopied] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState("Bosh do'kon (Kiraverish)");
 
@@ -24,33 +25,25 @@ export default function PosterPage() {
     if (typeof window !== 'undefined') {
       const origin = window.location.origin;
       setQrUrl(origin);
-      generateStandardQr(origin);
+      updateQrSource(origin, withLogo);
     }
   }, []);
 
-  const generateStandardQr = async (text: string) => {
-    if (!text) return;
-    try {
-      // Toza, klassik, barcha telefonlar 100% taniydigan QR kod
-      const dataUrl = await QRCode.toDataURL(text, {
-        width: 700,
-        margin: 2,
-        errorCorrectionLevel: 'M',
-        color: {
-          dark: '#1d3b8a', // Comfort Textile rasmiy ko'k rangi
-          light: '#ffffff',
-        },
-      });
-      setQrDataUrl(dataUrl);
-    } catch (err) {
-      console.error('QR generation error:', err);
-    }
+  const updateQrSource = (targetUrl: string, hasLogo: boolean) => {
+    if (!targetUrl) return;
+    const apiUrl = `/api/qr?url=${encodeURIComponent(targetUrl)}&logo=${hasLogo}&t=${Date.now()}`;
+    setQrImgSrc(apiUrl);
   };
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQrUrl(val);
-    generateStandardQr(val);
+    updateQrSource(val, withLogo);
+  };
+
+  const toggleLogo = (val: boolean) => {
+    setWithLogo(val);
+    updateQrSource(qrUrl, val);
   };
 
   const handlePrint = () => {
@@ -64,16 +57,16 @@ export default function PosterPage() {
   };
 
   const downloadQrOnly = () => {
-    if (!qrDataUrl) return;
+    if (!qrImgSrc) return;
     const a = document.createElement('a');
-    a.href = qrDataUrl;
+    a.href = qrImgSrc;
     a.download = 'comfort-textile-qr.png';
     a.click();
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Oddiy header (fixed emas) */}
+      {/* Oddiy boshqaruv paneli (Printda yashiriladi) */}
       <header className="print:hidden border-b border-slate-800 bg-slate-900 py-3">
         <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
           <Link
@@ -91,12 +84,12 @@ export default function PosterPage() {
               className="px-3 py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-all border border-slate-700"
             >
               <Download className="w-3.5 h-3.5 text-blue-400" />
-              <span className="hidden sm:inline">QR rasmni yuklab olish</span>
+              <span className="hidden sm:inline">QR yuklab olish</span>
             </button>
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition-all shadow-md"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition-all shadow-md shadow-blue-600/30"
             >
               <Printer className="w-4 h-4" />
               <span>Chop etish (A4 Plakat)</span>
@@ -105,13 +98,13 @@ export default function PosterPage() {
         </div>
       </header>
 
-      {/* URL sozlash paneli */}
+      {/* Sozlash paneli (Printda yashiriladi) */}
       <div className="print:hidden max-w-2xl mx-auto w-full px-4 pt-4 pb-2">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 text-xs space-y-2">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-xs space-y-3">
           <div className="flex items-center justify-between">
             <span className="font-semibold text-slate-300 flex items-center gap-1.5">
               <QrCode className="w-4 h-4 text-blue-400" />
-              <span>QR-kod manzili:</span>
+              <span>QR-kodga biriktirilgan havola:</span>
             </span>
             <button
               onClick={handleCopy}
@@ -129,6 +122,21 @@ export default function PosterPage() {
             placeholder="https://..."
             className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 font-mono focus:border-blue-500 focus:outline-none"
           />
+
+          <div className="flex items-center justify-between pt-1 border-t border-slate-800">
+            <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+              <input
+                type="checkbox"
+                checked={withLogo}
+                onChange={(e) => toggleLogo(e.target.checked)}
+                className="w-4 h-4 accent-blue-600 rounded cursor-pointer"
+              />
+              <span>QR-kod markazida <b>Comfort Textile logotipi</b> bo'lsin</span>
+            </label>
+            <span className="text-[11px] text-blue-400 font-semibold flex items-center gap-1">
+              <Sparkles className="w-3 h-3" /> Ultra-HD Sifat
+            </span>
+          </div>
         </div>
       </div>
 
@@ -171,13 +179,13 @@ export default function PosterPage() {
             </p>
           </div>
 
-          {/* QR Kod bloki */}
+          {/* Ultra-HD Professional QR Kod bloki */}
           <div className="my-2 p-3 bg-slate-50 border-4 border-blue-900 rounded-3xl flex flex-col items-center shadow-md">
-            {qrDataUrl ? (
+            {qrImgSrc ? (
               <img
-                src={qrDataUrl}
-                alt="Comfort Textile QR Kod"
-                className="w-56 h-56 sm:w-60 sm:h-60 object-contain"
+                src={qrImgSrc}
+                alt="Comfort Textile Ultra-HD QR Kod"
+                className="w-56 h-56 sm:w-64 sm:h-64 object-contain rounded-xl"
               />
             ) : (
               <div className="w-56 h-56 flex items-center justify-center text-slate-400">
