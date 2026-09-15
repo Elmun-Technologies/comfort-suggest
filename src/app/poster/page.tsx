@@ -217,27 +217,6 @@ export default function PosterPage() {
 
         </div>
       </main>
-
-      <style jsx global>{`
-        @media print {
-          body {
-            background-color: white !important;
-            color: black !important;
-          }
-          @page {
-            size: A4 portrait;
-            margin: 1cm;
-          }
-          .poster-card {
-            width: 100% !important;
-            height: 100% !important;
-            max-width: 100% !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 1.5rem !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }
