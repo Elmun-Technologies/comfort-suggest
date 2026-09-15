@@ -365,64 +365,122 @@ export function getDailyReportData(targetDate?: string): DailyReportData {
 }
 
 // === TELEGRAM SOZLAMALARI ===
+// FIXED: To'g'ri trim, env fallback va enabled logikasi tuzatildi
+// Muammo: fileConfig bo'sh bo'lsa ham enabled=false qolib ketayotgandi, shuning uchun Telegramga yuborilmayotgandi
 
 export function getTelegramConfig(): TelegramConfig {
-  const envToken = process.env.TELEGRAM_BOT_TOKEN || '';
-  const envChatId = process.env.TELEGRAM_CHAT_ID || '';
+  const envToken = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
+  const envChatId = (process.env.TELEGRAM_CHAT_ID || '').trim();
 
-  // In-memory cache'da bo'lsa va file'da yangiroq narsa yo'q bo'lsa, shuni qaytarish
   const cached = globalThis.__COMFORT_SETTINGS_CACHE__;
-
-  // Fayldan o'qishga harakat qilamiz
   const fileConfig = readJsonFile<TelegramConfig>('settings.json');
 
-  if (fileConfig) {
-    // File config topildi, uni cache'ga ham qo'yamiz
-    const merged: TelegramConfig = {
-      botToken: fileConfig.botToken || cached?.botToken || envToken,
-      chatId: fileConfig.chatId || cached?.chatId || envChatId,
-      enabled: fileConfig.enabled ?? cached?.enabled ?? Boolean(fileConfig.botToken || envToken),
-      dailyReportTime: fileConfig.dailyReportTime || '20:00',
-      lastReportDate: fileConfig.lastReportDate,
-    };
-    globalThis.__COMFORT_SETTINGS_CACHE__ = merged;
-    return merged;
-  }
-
-  // Fayl yo'q, lekin cache bo'lsa
-  if (cached) {
-    return {
-      botToken: cached.botToken || envToken,
-      chatId: cached.chatId || envChatId,
-      enabled: cached.enabled ?? Boolean(cached.botToken || envToken),
-      dailyReportTime: cached.dailyReportTime || '20:00',
-      lastReportDate: cached.lastReportDate,
-    };
-  }
-
-  // Hech narsa yo'q bo'lsa, env'dan olamiz va default config yaratamiz
-  const defaultConfig: TelegramConfig = {
-    botToken: envToken,
-    chatId: envChatId,
-    enabled: Boolean(envToken && envChatId),
-    dailyReportTime: '20:00',
+  const clean = (v?: any) => {
+    if (v === undefined || v === null) return '';
+    return String(v).trim();
   };
 
-  // Dev muhitida default config'ni faylga yozib qo'yamiz
-  if (!IS_PROD) {
-    writeJsonFile('settings.json', defaultConfig);
+  const fileToken = fileConfig ? clean(fileConfig.botToken) : '';
+  const fileChat = fileConfig ? clean(fileConfig.chatId) : '';
+  const cachedToken = cached ? clean(cached.botToken) : '';
+  const cachedChat = cached ? clean(cached.chatId) : '';
+
+  // Samarali token va chatId ni aniqlash: file > cache > env
+  // File'da bo'sh bo'lsa, env ga fallback qilish kerak (asosiy fix)
+  const effectiveToken = fileToken || cachedToken || envToken;
+  const effectiveChatId = fileChat || cachedChat || envChatId;
+
+  const fileHasToken = Boolean(fileToken);
+  const fileHasChat = Boolean(fileChat);
+  const fileHasAny = fileHasToken || fileHasChat;
+
+  // Enabled logikasini tuzatish:
+  // - Agar samarali token+chat mavjud bo'lsa, default enabled=true
+  // - Agar file'da token bor bo'lsa, file'dagi enabled ni hurmat qilamiz
+  // - Agar file bo'sh bo'lsa (token yo'q) lekin env'da token bor bo'lsa, enabled ni true ga majburlaymiz (asosiy bug fix)
+  let effectiveEnabled: boolean;
+
+  if (effectiveToken && effectiveChatId) {
+    if (fileHasAny) {
+      // File manba bo'lsa, uning enabled flagini olamiz
+      effectiveEnabled = fileConfig!.enabled ?? true;
+    } else if (cachedToken && cachedChat) {
+      effectiveEnabled = cached!.enabled ?? true;
+    } else {
+      // Env manba - har doim yoqilgan bo'lishi kerak
+      effectiveEnabled = true;
+      // Agar cache'da explicit false bo'lmasa
+      if (cached && cached.enabled === false && !cachedToken) {
+        // cache bo'sh bo'lsa ham env ni yoqamiz
+        effectiveEnabled = true;
+      }
+    }
+    // Agar file'da enabled=false lekin file'da token yo'q bo'lsa va env'da token bor bo'lsa -> enabled=true
+    if (fileConfig && fileConfig.enabled === false && !fileHasAny && envToken && envChatId) {
+      effectiveEnabled = true;
+    }
+  } else {
+    effectiveEnabled = false;
   }
 
-  globalThis.__COMFORT_SETTINGS_CACHE__ = defaultConfig;
-  return defaultConfig;
+  const merged: TelegramConfig = {
+    botToken: effectiveToken,
+    chatId: effectiveChatId,
+    enabled: effectiveEnabled,
+    dailyReportTime: fileConfig?.dailyReportTime || cached?.dailyReportTime || '20:00',
+    lastReportDate: fileConfig?.lastReportDate || cached?.lastReportDate,
+  };
+
+  globalThis.__COMFORT_SETTINGS_CACHE__ = merged;
+
+  // Dev muhitida: agar file bo'sh va env'da token bor bo'lsa, file ni yangilab qo'yamiz (keyingi safar to'g'ri o'qilishi uchun)
+  if (!IS_PROD && envToken && envChatId) {
+    if (!fileConfig || !fileHasAny) {
+      // Faqat env'dan kelgan bo'lsa, file ni ham to'ldirib qo'yamiz (ixtiyoriy)
+      // Lekin write xatolik bermasligi uchun try ichida
+      try {
+        if (fileToken !== envToken || fileChat !== envChatId) {
+          // Fayl bo'sh edi, endi env bilan to'ldiramiz
+          writeJsonFile('settings.json', merged);
+        }
+      } catch {}
+    }
+  }
+
+  // Agar file umuman yo'q bo'lsa va env ham yo'q bo'lsa, default yaratish (eski logika)
+  if (!fileConfig && !cached && !envToken && !envChatId && !IS_PROD) {
+    writeJsonFile('settings.json', merged);
+  }
+
+  return merged;
 }
 
 export function saveTelegramConfig(config: TelegramConfig): { success: boolean; isReadOnly?: boolean; usedPath?: string; warning?: string } {
+  // Trim va tozalash - muhim fix (number bo'lsa ham string ga o'tkazish)
+  const cleaned: TelegramConfig = {
+    botToken: String(config.botToken || '').trim(),
+    chatId: String(config.chatId || '').trim(),
+    enabled: config.enabled ?? true,
+    dailyReportTime: config.dailyReportTime || '20:00',
+    lastReportDate: config.lastReportDate,
+  };
+
+  // Agar token va chatId bo'lsa, enabled ni majburan true qilamiz (foydalanuvchi xohlayapti)
+  if (cleaned.botToken && cleaned.chatId) {
+    cleaned.enabled = cleaned.enabled !== false ? true : cleaned.enabled;
+    // Agar foydalanuvchi ataylab o'chirgan bo'lsa ham, agar tokenlar yangi bo'lsa true qilamiz
+    // Lekin agar config.enabled explicit false bo'lsa, hurmat qilamiz - lekin test uchun true bo'lishi kerak
+    // Shuning uchun: agar botToken va chatId bo'sh bo'lmasa, enabled default true
+    if (config.enabled === undefined) {
+      cleaned.enabled = true;
+    }
+  }
+
   // Avval cache'ga saqlaymiz - bu har doim ishlaydi
-  globalThis.__COMFORT_SETTINGS_CACHE__ = config;
+  globalThis.__COMFORT_SETTINGS_CACHE__ = cleaned;
 
   // Faylga yozishga harakat qilamiz
-  const result = writeJsonFile('settings.json', config);
+  const result = writeJsonFile('settings.json', cleaned);
 
   if (result.success) {
     return { success: true, usedPath: result.usedPath };
