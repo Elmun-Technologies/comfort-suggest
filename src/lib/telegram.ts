@@ -1,4 +1,4 @@
-import { FeedbackItem, TelegramConfig } from '@/types';
+import { DailyReportData, FeedbackItem, TelegramConfig } from '@/types';
 import { DEPARTMENTS, FEEDBACK_TYPES, RATINGS } from './constants';
 
 function getTypeText(type: FeedbackItem['type']): string {
@@ -6,7 +6,7 @@ function getTypeText(type: FeedbackItem['type']): string {
     case 'complaint':
       return '🔴 E\'tiroz / Shikoyat';
     case 'suggestion':
-      return '🟡 Taklif / Yangilik';
+      return '🔵 Taklif / Yangi tovar';
     case 'praise':
       return '🟢 Rahmat / Minnatdorchilik';
     default:
@@ -58,28 +58,43 @@ export async function sendFeedbackToTelegram(
   const deptTitle = getDepartmentTitle(feedback.department);
   const ratingText = getRatingStars(feedback.rating);
 
+  // Qo'shimcha ma'lumotlar
+  const roleText = {
+    master: '🔨 Mebel ustasi',
+    workshop: '🏭 Mebel sexi',
+    upholstery: '🛋 Peretyajka (Qoplovchi)',
+    client: '🏠 Xususiy xaridor',
+    designer: '📐 Dizayner',
+  }[feedback.clientRole] || 'Mijoz';
+
+  const requestedText = feedback.requestedProduct
+    ? `\n<b>🔍 Kerakli / Yetishmayotgan tovar:</b> <code>${escapeHtml(feedback.requestedProduct)}</code>`
+    : '';
+
+  const tagsText = feedback.quickTags && feedback.quickTags.length > 0
+    ? `\n<b>🏷 Teglar:</b> ${feedback.quickTags.map(t => `#${t.replace(/\s+/g, '_')}`).join(' ')}`
+    : '';
+
   const captionHtml = `
 <b>🛋 COMFORT TEXTILE — ANONIM MUROJAAT</b>
 ━━━━━━━━━━━━━━━━━━━━
+<b>👤 Kimdan:</b> ${roleText}
 <b>📌 Turi:</b> ${typeText}
 <b>🏬 Yoʻnalish:</b> ${deptTitle}
 <b>⭐ Baho:</b> ${ratingText}
 <b>📍 Filial:</b> ${feedback.storeBranch || "Bosh do'kon"}
-<b>🕒 Vaqt:</b> ${formattedDate}
+<b>🕒 Vaqt:</b> ${formattedDate}${requestedText}${tagsText}
 
-<b>📝 Murojaat matni:</b>
-<i>${escapeHtml(feedback.text || "(Matn kiritilmadi, faqat media)")}</i>
+<b>📝 Murojaat mazmuni:</b>
+<i>${escapeHtml(feedback.text || "(Faqat ovozli xabar yoki rasm)")}</i>
 
 ━━━━━━━━━━━━━━━━━━━━
-🛡 <i>Ushbu murojaat QR-kod orqali 100% anonim yuborildi.</i>
+🛡 <i>Ushbu murojaat do'kondagi QR-kod orqali 100% anonim yuborildi.</i>
 `.trim();
 
   try {
-    // 1. Agar rasm bo'lsa (base64 Data URL)
     if (feedback.imageUrl && feedback.imageUrl.startsWith('data:image/')) {
-      const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
       const matches = feedback.imageUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-      
       if (matches && matches.length === 3) {
         const mimeType = matches[1];
         const base64Data = matches[2];
@@ -99,11 +114,8 @@ export async function sendFeedbackToTelegram(
         });
 
         const data = await res.json();
-        if (!data.ok) {
-          throw new Error(data.description || 'Telegram sendPhoto xatosi');
-        }
+        if (!data.ok) throw new Error(data.description || 'Telegram sendPhoto xatosi');
 
-        // Agar audio ham birga bo'lsa, audioni ham alohida yuboramiz
         if (feedback.audioUrl && feedback.audioUrl.startsWith('data:audio/')) {
           await sendAudioToTelegram(token, chatId, feedback.audioUrl);
         }
@@ -112,9 +124,7 @@ export async function sendFeedbackToTelegram(
       }
     }
 
-    // 2. Agar audio bo'lsa (va rasm yo'q bo'lsa)
     if (feedback.audioUrl && feedback.audioUrl.startsWith('data:audio/')) {
-      // Avval matnli xabarni yuboramiz
       const textRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,14 +136,10 @@ export async function sendFeedbackToTelegram(
       });
 
       const textData = await textRes.json();
-      
-      // So'ng ovozli xabarni yuboramiz
       await sendAudioToTelegram(token, chatId, feedback.audioUrl);
-
       return { success: true, messageId: textData.result?.message_id };
     }
 
-    // 3. Faqat matnli xabar
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -145,9 +151,7 @@ export async function sendFeedbackToTelegram(
     });
 
     const data = await res.json();
-    if (!data.ok) {
-      throw new Error(data.description || 'Telegram sendMessage xatosi');
-    }
+    if (!data.ok) throw new Error(data.description || 'Telegram sendMessage xatosi');
 
     return { success: true, messageId: data.result?.message_id };
   } catch (err: any) {
@@ -169,13 +173,93 @@ async function sendAudioToTelegram(token: string, chatId: string, audioDataUrl: 
   const blob = new Blob([buffer], { type: mimeType });
   formData.append('chat_id', chatId);
   formData.append('voice', blob, filename);
-  formData.append('caption', '🎙 <b>Anonim ovozli murojaat</b>');
+  formData.append('caption', '🎙 <b>Mebel ustasidan anonim ovozli xabar</b>');
   formData.append('parse_mode', 'HTML');
 
   await fetch(`https://api.telegram.org/bot${token}/sendVoice`, {
     method: 'POST',
     body: formData,
   });
+}
+
+// === KUNLIK KECHKI ANALITIK HISOBOTNI TELEGRAMGA YUBORISH ===
+
+export async function sendDailyReportToTelegram(
+  report: DailyReportData,
+  config: TelegramConfig
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  if (!config.botToken || !config.chatId || !config.enabled) {
+    return { success: false, error: "Telegram bot sozlamalari (Token va Guruh ID) kiritilmagan." };
+  }
+
+  const token = config.botToken.trim();
+  const chatId = config.chatId.trim();
+
+  // Rol taqsimoti
+  const rolesList = report.clientRolesBreakdown
+    .map(r => `  • ${r.role}: <b>${r.count} ta</b> (${r.percentage}%)`)
+    .join('\n');
+
+  // Eng ko'p shikoyat/fikr tushgan yo'nalishlar
+  const deptsList = report.topDepartments.slice(0, 3)
+    .map((d, i) => `  ${i + 1}. ${d.title} — <b>${d.count} ta</b>`)
+    .join('\n');
+
+  // Kerakli tovarlar
+  const productsList = report.requestedProducts.length > 0
+    ? report.requestedProducts.slice(0, 4).map(p => `  • <code>${escapeHtml(p)}</code>`).join('\n')
+    : '  <i>(Bugun maxsus tovar soʻralmadi)</i>';
+
+  const reportHtml = `
+📊 <b>COMFORT TEXTILE — KUNLIK XULOSA VA ANALITIKA</b>
+📅 <b>Sana:</b> ${report.date} (Kechki hisobot)
+━━━━━━━━━━━━━━━━━━━━
+👥 <b>QR orqali kirganlar:</b> ${report.totalVisits} kishi
+📝 <b>Fikr qoldirganlar:</b> ${report.totalSubmissions} kishi
+🎯 <b>Konversiya (Faollik):</b> <b>${report.conversionRate}%</b>
+⭐ <b>Oʻrtacha qoniqish:</b> <b>${report.avgRating} / 5.0</b>
+
+📌 <b>MUROJAATLAR TAQSIMOTI:</b>
+  • 🔴 E'tirozlar: <b>${report.complaintsCount} ta</b>
+  • 🔵 Takliflar: <b>${report.suggestionsCount} ta</b>
+  • 🟢 Minnatdorchilik: <b>${report.praisesCount} ta</b>
+
+👤 <b>MIJOZLAR KATEGORIYASI:</b>
+${rolesList || '  • Mebel ustalari'}
+
+⚠️ <b>ENG KOʻP TILGA OLINGAN SOHALAR:</b>
+${deptsList || '  1. Mebel matolari'}
+
+🔍 <b>USTALAR SOʻRAGAN / TOPA OLMAGAN TOVARLAR:</b>
+${productsList}
+
+💡 <b>RAHBARIYAT UCHUN TAHLIL VA XULOSA:</b>
+<i>${escapeHtml(report.aiSummary)}</i>
+━━━━━━━━━━━━━━━━━━━━
+🤖 <i>Comfort Textile Smart Analytics tizimi</i>
+`.trim();
+
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: reportHtml,
+        parse_mode: 'HTML',
+      }),
+    });
+
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.description || 'Xabar yuborib boʻlmadi');
+
+    return {
+      success: true,
+      message: `Kunlik analitika muvaffaqiyatli guruhga yuborildi! (${report.totalSubmissions} ta murojaat tahlil qilindi)`,
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 }
 
 function escapeHtml(text: string): string {
@@ -198,12 +282,12 @@ export async function testTelegramBot(token: string, chatId: string): Promise<{ 
     const testMsg = `
 ✅ <b>COMFORT TEXTILE BOTI ULANDI!</b>
 ━━━━━━━━━━━━━━━━━━━━
-Ushbu guruh anonim e'tiroz va takliflarni qabul qilishga muvaffaqiyatli sozlandi.
+Ushbu guruh anonim e'tiroz va takliflarni hamda <b>kunlik kechki analitikani</b> qabul qilishga sozlandi.
 
-🤖 <b>Bot nomi:</b> @${meData.result.username}
+🤖 <b>Bot:</b> @${meData.result.username}
 🕒 <b>Vaqt:</b> ${formatDate(new Date().toISOString())}
 ━━━━━━━━━━━━━━━━━━━━
-Do'kondagi QR-kod orqali mebel ustalari va xaridorlar yuborgan barcha murojaatlar shu yerda aks etadi.
+Do'kondagi QR-kod orqali mebel ustalari yuborgan barcha fikrlar va har kuni kechqurun to'liq hisobot shu yerga yuboriladi.
     `.trim();
 
     const sendRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -218,7 +302,7 @@ Do'kondagi QR-kod orqali mebel ustalari va xaridorlar yuborgan barcha murojaatla
 
     const sendData = await sendRes.json();
     if (!sendData.ok) {
-      return { success: false, error: `Guruhga yuborishda xatolik: ${sendData.description}. Botni ushbu guruhga qo'shganingiz va xabar yozish huquqi borligini tekshiring.` };
+      return { success: false, error: `Guruhga yuborishda xatolik: ${sendData.description}. Botni guruhga qo'shib, xabar yozish huquqini bering.` };
     }
 
     return {

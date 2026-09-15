@@ -7,7 +7,7 @@ import {
   Heart,
   Hammer,
   Layers,
-  Package,
+  Scissors,
   CircleDollarSign,
   Users,
   Receipt,
@@ -15,12 +15,21 @@ import {
   HelpCircle,
   Send,
   Loader2,
-  Shield,
+  ShieldCheck,
   MapPin,
   Sparkles,
+  Plus,
+  Check,
 } from 'lucide-react';
-import { FeedbackDepartment, FeedbackType, RatingScore } from '@/types';
-import { DEPARTMENTS, FEEDBACK_TYPES, RATINGS, STORE_BRANCHES } from '@/lib/constants';
+import { ClientRole, FeedbackDepartment, FeedbackType, RatingScore } from '@/types';
+import {
+  CLIENT_ROLES,
+  DEPARTMENTS,
+  FEEDBACK_TYPES,
+  QUICK_TAGS,
+  RATINGS,
+  STORE_BRANCHES,
+} from '@/lib/constants';
 import AudioRecorder from './AudioRecorder';
 import ImageUploader from './ImageUploader';
 
@@ -29,10 +38,14 @@ interface FeedbackFormProps {
 }
 
 export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
+  // Tanlovlar
+  const [clientRole, setClientRole] = useState<ClientRole>('master');
   const [feedbackType, setFeedbackType] = useState<FeedbackType>('complaint');
+  const [department, setDepartment] = useState<FeedbackDepartment>('cutting_warehouse');
   const [rating, setRating] = useState<RatingScore>(1);
   const [branch, setBranch] = useState<string>(STORE_BRANCHES[0]);
-  const [department, setDepartment] = useState<FeedbackDepartment>('boards');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [requestedProduct, setRequestedProduct] = useState<string>('');
   const [text, setText] = useState<string>('');
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -40,14 +53,22 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const toggleTag = (tag: string) => {
+    if (selectedTags.includes(tag)) {
+      setSelectedTags(selectedTags.filter((t) => t !== tag));
+    } else {
+      setSelectedTags([...selectedTags, tag]);
+    }
+  };
+
   const renderDepartmentIcon = (iconName: string, className = 'w-4 h-4') => {
     switch (iconName) {
       case 'Layers':
         return <Layers className={className} />;
       case 'Hammer':
         return <Hammer className={className} />;
-      case 'Package':
-        return <Package className={className} />;
+      case 'Scissors':
+        return <Scissors className={className} />;
       case 'CircleDollarSign':
         return <CircleDollarSign className={className} />;
       case 'Users':
@@ -61,25 +82,12 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
     }
   };
 
-  const renderTypeIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'AlertTriangle':
-        return <AlertTriangle className="w-5 h-5 text-rose-400" />;
-      case 'Lightbulb':
-        return <Lightbulb className="w-5 h-5 text-blue-400" />;
-      case 'Heart':
-        return <Heart className="w-5 h-5 text-emerald-400" />;
-      default:
-        return null;
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!text.trim() && !audioUrl && !imageUrl) {
-      setError("Iltimos, fikringizni yozing yoki mikrofon orqali ovoz qoldiring.");
+    if (!text.trim() && !audioUrl && !imageUrl && !requestedProduct && selectedTags.length === 0) {
+      setError("Iltimos, fikringizni yozing, ovoz qoldiring yoki teglar orqali belgilang.");
       return;
     }
 
@@ -94,6 +102,9 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
           rating,
           department,
           storeBranch: branch,
+          clientRole,
+          requestedProduct: requestedProduct.trim() || undefined,
+          quickTags: selectedTags,
           text: text.trim(),
           audioUrl,
           imageUrl,
@@ -102,28 +113,53 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Murojaatni yuborishda xatolik yuz berdi');
+        throw new Error(data.error || 'Yuborishda xatolik yuz berdi');
       }
 
       onSuccess(feedbackType);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Server bilan bog'lanishda xatolik yuz berdi. Qayta urinib ko'ring.");
+      setError(err.message || "Server bilan bog'lanishda xatolik. Qayta urinib ko'ring.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
       
-      {/* 1. Murojaat turi */}
+      {/* 1. Kim siz? (Mijoz roli - bitta bosish) */}
       <div className="space-y-2">
-        <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
-          <span>1. Murojaat turi:</span>
-          <span className="text-[11px] font-normal text-slate-400 lowercase">biringizni tanlang</span>
+        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+          1. Faoliyatingiz turi:
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="flex flex-wrap gap-2">
+          {CLIENT_ROLES.map((role) => {
+            const isSelected = clientRole === role.id;
+            return (
+              <button
+                key={role.id}
+                type="button"
+                onClick={() => setClientRole(role.id)}
+                className={`px-3 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 border ${
+                  isSelected
+                    ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
+                    : 'bg-slate-900/60 text-slate-300 border-slate-800 hover:bg-slate-800'
+                }`}
+              >
+                <span>{role.title}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. Murojaat maqsadi */}
+      <div className="space-y-2">
+        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+          2. Murojaat maqsadi:
+        </label>
+        <div className="grid grid-cols-3 gap-2">
           {FEEDBACK_TYPES.map((t) => {
             const isSelected = feedbackType === t.id;
             return (
@@ -136,67 +172,23 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
                   if (t.id === 'complaint') setRating(1);
                   if (t.id === 'suggestion') setRating(4);
                 }}
-                className={`p-3 rounded-2xl border text-left transition-all flex sm:flex-col items-center sm:items-start justify-between sm:justify-center gap-2 ${
+                className={`py-3 px-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1 ${
                   isSelected
-                    ? `${t.bgActive} shadow-lg ring-2 ring-blue-500/50 scale-[1.01]`
-                    : 'bg-slate-900/80 border-slate-800 hover:bg-slate-800/80 text-slate-300'
+                    ? 'bg-blue-950/70 border-blue-500 text-white ring-2 ring-blue-500/40 shadow-sm'
+                    : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:bg-slate-800'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0">
-                    {renderTypeIcon(t.iconName)}
-                  </div>
-                  <div>
-                    <p className="font-bold text-xs text-white">{t.title}</p>
-                    <p className="text-[10px] text-slate-400 leading-tight hidden sm:block">{t.subtitle}</p>
-                  </div>
-                </div>
-                <div
-                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                    isSelected ? 'border-blue-400 bg-blue-500' : 'border-slate-700'
-                  }`}
-                >
-                  {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                </div>
+                <span className="text-xs font-bold leading-tight">{t.title}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* 2. Baholash (Kulgichlar) */}
-      <div className="space-y-2 bg-slate-900/60 border border-slate-800/90 rounded-2xl p-3.5">
-        <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-          2. Umumiy qoniqishingiz:
-        </label>
-        <div className="grid grid-cols-5 gap-2 text-center">
-          {RATINGS.map((r) => {
-            const isSelected = rating === r.score;
-            return (
-              <button
-                key={r.score}
-                type="button"
-                onClick={() => setRating(r.score)}
-                className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
-                  isSelected
-                    ? 'bg-blue-600/30 border-2 border-blue-500 scale-105 shadow-md shadow-blue-500/20'
-                    : 'bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800'
-                }`}
-              >
-                <span className="text-2xl select-none">{r.emoji}</span>
-                <span className={`text-[10px] font-bold leading-tight ${isSelected ? 'text-blue-300' : 'text-slate-400'}`}>
-                  {r.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 3. Do'kon bo'limi */}
+      {/* 3. Qaysi bo'lim yoki mahsulot? */}
       <div className="space-y-2">
-        <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-          3. Qaysi tovar yoki bo'lim haqida?
+        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+          3. Yo'nalishni tanlang:
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {DEPARTMENTS.map((dept) => {
@@ -208,20 +200,19 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
                 onClick={() => setDepartment(dept.id)}
                 className={`p-2.5 rounded-xl border text-left transition-all flex items-start gap-2 ${
                   isSelected
-                    ? 'bg-blue-950/60 border-blue-500 text-blue-100 ring-1 ring-blue-500/50 shadow-md'
-                    : 'bg-slate-900/70 border-slate-800 hover:bg-slate-800/70 text-slate-300'
+                    ? 'bg-blue-900/30 border-blue-500 text-white ring-1 ring-blue-500/50'
+                    : 'bg-slate-900/50 border-slate-800/80 text-slate-300 hover:bg-slate-800'
                 }`}
               >
                 <div
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                    isSelected ? 'bg-blue-600 text-white' : 'bg-slate-800 text-blue-400'
+                  className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                    isSelected ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'
                   }`}
                 >
                   {renderDepartmentIcon(dept.icon, 'w-3.5 h-3.5')}
                 </div>
                 <div className="min-w-0">
                   <p className="text-[11px] font-bold text-white truncate leading-tight">{dept.title}</p>
-                  <p className="text-[9px] text-slate-400 mt-0.5 line-clamp-1">{dept.examples}</p>
                 </div>
               </button>
             );
@@ -229,76 +220,108 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
         </div>
       </div>
 
-      {/* 4. Filial tanlash */}
-      <div className="space-y-1.5">
-        <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-          <MapPin className="w-3.5 h-3.5 text-blue-400" />
-          <span>Filial:</span>
+      {/* 4. Tezkor sabablar (Quick tags - bitta tegish bilan belgilash) */}
+      <div className="space-y-2 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-3.5">
+        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+          <span>4. Tezkor sababni belgilang (ixtiyoriy):</span>
+          <span className="text-[10px] text-slate-400">birkantasi tanlanishi mumkin</span>
         </label>
-        <div className="grid grid-cols-3 gap-2">
-          {STORE_BRANCHES.map((b) => (
-            <button
-              key={b}
-              type="button"
-              onClick={() => setBranch(b)}
-              className={`py-2 px-2 rounded-xl text-[11px] font-medium border text-center transition-all truncate ${
-                branch === b
-                  ? 'bg-blue-600/25 border-blue-500 text-blue-200'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800'
-              }`}
-            >
-              {b}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-1.5">
+          {QUICK_TAGS.map((tag) => {
+            const active = selectedTags.includes(tag);
+            return (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => toggleTag(tag)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1 ${
+                  active
+                    ? 'bg-blue-600 text-white border-blue-400'
+                    : 'bg-slate-800/60 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                }`}
+              >
+                {active ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3 text-slate-400" />}
+                <span>{tag}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* 5. Matn yozish */}
+      {/* 5. Yetishmayotgan / Qidirgan tovar (Eng qimmatli ma'lumot!) */}
       <div className="space-y-1.5">
-        <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-          4. Fikringizni yozing:
+        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+          <span>5. Qaysi mato yoki tovar yetishmayapti?</span>
+          <span className="text-[10px] text-slate-400">assortiment uchun</span>
+        </label>
+        <input
+          type="text"
+          value={requestedProduct}
+          onChange={(e) => setRequestedProduct(e.target.value)}
+          placeholder="Masalan: Turkiya bej bukle matosi yoki gazlift 100N..."
+          className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+        />
+      </div>
+
+      {/* 6. Fikr / E'tiroz matni */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-slate-300 block">
+          6. Fikringiz yoki e'tirozingiz:
         </label>
         <textarea
           rows={3}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={
-            feedbackType === 'complaint'
-              ? "Qanday kamchilik yoki muammo bo'ldi? (Mato sifati, o'lchashdagi xato, ombordagi kutish)..."
-              : feedbackType === 'suggestion'
-              ? "Qanday yangi mato turi, rangi yoki mebel aksessuarlarini olib kelishimizni xohlaysiz?.."
-              : "Xizmatimiz, sifat yoki xodimimiz haqida yaxshi fikringiz..."
-          }
-          className="w-full p-3.5 rounded-2xl bg-slate-900 border border-slate-700/80 text-slate-100 placeholder:text-slate-500 text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all resize-none"
+          placeholder="Vaziyatni batafsilroq yozing (yoki pastda ovoz qoldiring)..."
+          className="w-full p-3.5 rounded-xl bg-slate-900 border border-slate-700/80 text-white placeholder:text-slate-500 text-xs sm:text-sm focus:outline-none focus:border-blue-500 transition-all resize-none"
         />
       </div>
 
-      {/* 6. Audio va Rasm */}
-      <div className="space-y-2">
-        <p className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-          <span>Mebel ustalari uchun tezkor imkoniyatlar:</span>
-        </p>
+      {/* 7. Ovoz yozish va Rasm */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <AudioRecorder onAudioRecorded={(data) => setAudioUrl(data)} />
+        <ImageUploader onImageSelected={(data) => setImageUrl(data)} />
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <AudioRecorder onAudioRecorded={(data) => setAudioUrl(data)} />
-          <ImageUploader onImageSelected={(data) => setImageUrl(data)} />
+      {/* 8. Baholash */}
+      <div className="space-y-1.5 pt-1 border-t border-slate-800/80">
+        <label className="text-xs font-semibold text-slate-400 block">
+          Umumiy bahoyingiz:
+        </label>
+        <div className="grid grid-cols-5 gap-2 text-center">
+          {RATINGS.map((r) => {
+            const isSelected = rating === r.score;
+            return (
+              <button
+                key={r.score}
+                type="button"
+                onClick={() => setRating(r.score)}
+                className={`py-2 rounded-xl flex flex-col items-center justify-center transition-all ${
+                  isSelected
+                    ? 'bg-blue-600/30 border border-blue-400 scale-105'
+                    : 'bg-slate-900 border border-slate-800 hover:bg-slate-800'
+                }`}
+              >
+                <span className="text-2xl select-none">{r.emoji}</span>
+                <span className={`text-[10px] mt-0.5 ${isSelected ? 'text-blue-300 font-bold' : 'text-slate-400'}`}>
+                  {r.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Anonimlik eslatmasi */}
-      <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-2xl flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-          <Shield className="w-4 h-4" />
-        </div>
+      {/* 100% Anonimlik eslatmasi */}
+      <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex items-center gap-2.5">
+        <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
         <p className="text-[11px] text-slate-300 leading-tight">
-          <b>100% Anonim:</b> Ismingiz yoki raqamingiz talab qilinmaydi. Xabar to'g'ridan-to'g'ri Telegram guruhga tushadi.
+          <b>100% Anonim:</b> Ism yoki telefoningiz saqlanmaydi. Xabar to'g'ridan-to'g'ri Telegram guruhga tushadi.
         </p>
       </div>
 
-      {/* Xatolik */}
       {error && (
-        <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-2xl text-xs flex items-center gap-2">
+        <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
           <span>{error}</span>
         </div>
@@ -308,17 +331,17 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full py-4 px-6 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-500 active:scale-[0.99] disabled:opacity-60 text-white font-black rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-blue-600/30 text-sm tracking-wide"
+        className="w-full py-4 bg-blue-600 hover:bg-blue-500 active:scale-[0.99] disabled:opacity-60 text-white font-bold rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 text-sm tracking-wide"
       >
         {isSubmitting ? (
           <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            <span>Telegram guruhga yuborilmoqda...</span>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Yuborilmoqda...</span>
           </>
         ) : (
           <>
             <Send className="w-4 h-4" />
-            <span>ANONIM TARZDA YUBORISH</span>
+            <span>ANONIM YUBORISH</span>
           </>
         )}
       </button>

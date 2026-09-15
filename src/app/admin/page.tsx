@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  LayoutDashboard,
+  BarChart3,
   AlertTriangle,
   Lightbulb,
   Heart,
@@ -13,40 +13,82 @@ import {
   Clock,
   Filter,
   RefreshCw,
-  Layers,
+  Send,
+  Users,
+  Eye,
+  CheckCircle2,
+  TrendingUp,
+  Tag,
+  Search,
+  Loader2,
+  Building2,
   Volume2,
   Image as ImageIcon,
-  Building2,
 } from 'lucide-react';
-import { FeedbackDepartment, FeedbackItem, FeedbackStatus } from '@/types';
-import { DEPARTMENTS, RATINGS, STORE_NAME } from '@/lib/constants';
+import { DailyReportData, FeedbackDepartment, FeedbackItem, FeedbackStatus } from '@/types';
+import { CLIENT_ROLES, DEPARTMENTS, RATINGS, STORE_NAME } from '@/lib/constants';
 
 export default function AdminPage() {
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [reportData, setReportData] = useState<DailyReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSendingReport, setIsSendingReport] = useState(false);
+  const [reportResult, setReportResult] = useState<{ success: boolean; message?: string } | null>(null);
+
   const [filterType, setFilterType] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterDept, setFilterDept] = useState<string>('all');
+  const [filterRole, setFilterRole] = useState<string>('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const fetchFeedbacks = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/feedback');
-      const data = await res.json();
-      if (data.success) {
-        setFeedbacks(data.data);
-      }
+      const [resFb, resReport] = await Promise.all([
+        fetch('/api/feedback'),
+        fetch('/api/daily-report'),
+      ]);
+      const dataFb = await resFb.json();
+      const dataReport = await resReport.json();
+
+      if (dataFb.success) setFeedbacks(dataFb.data);
+      if (dataReport.success) setReportData(dataReport.data);
     } catch (err) {
-      console.error('Fetch error:', err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchFeedbacks();
+    loadData();
   }, []);
+
+  const handleSendReportNow = async () => {
+    setIsSendingReport(true);
+    setReportResult(null);
+    try {
+      const res = await fetch('/api/daily-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReportResult({
+          success: true,
+          message: data.message || "Kunlik hisobot va analitika Telegram guruhga muvaffaqiyatli yetkazildi!",
+        });
+      } else {
+        setReportResult({
+          success: false,
+          message: data.error || "Guruhga yuborib bo'lmadi. Telegram sozlamalarini tekshiring.",
+        });
+      }
+    } catch (err: any) {
+      setReportResult({ success: false, message: err.message });
+    } finally {
+      setIsSendingReport(false);
+    }
+  };
 
   const handleStatusChange = async (id: string, newStatus: FeedbackStatus) => {
     setUpdatingId(id);
@@ -62,23 +104,16 @@ export default function AdminPage() {
         );
       }
     } catch (err) {
-      console.error('Update status error:', err);
+      console.error(err);
     } finally {
       setUpdatingId(null);
     }
   };
 
-  const totalCount = feedbacks.length;
-  const complaintCount = feedbacks.filter((f) => f.type === 'complaint').length;
-  const suggestionCount = feedbacks.filter((f) => f.type === 'suggestion').length;
-  const praiseCount = feedbacks.filter((f) => f.type === 'praise').length;
-  const avgRating = totalCount > 0 ? (feedbacks.reduce((acc, f) => acc + f.rating, 0) / totalCount).toFixed(1) : '5.0';
-  const resolvedCount = feedbacks.filter((f) => f.status === 'resolved').length;
-
+  // Filtrlash
   const filteredFeedbacks = feedbacks.filter((item) => {
     if (filterType !== 'all' && item.type !== filterType) return false;
-    if (filterStatus !== 'all' && item.status !== filterStatus) return false;
-    if (filterDept !== 'all' && item.department !== filterDept) return false;
+    if (filterRole !== 'all' && item.clientRole !== filterRole) return false;
     return true;
   });
 
@@ -87,35 +122,39 @@ export default function AdminPage() {
     return d ? d.title : id;
   };
 
+  const getRoleTitle = (roleId?: string) => {
+    const r = CLIENT_ROLES.find((item) => item.id === roleId);
+    return r ? r.title : 'Mijoz';
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Header */}
-      <header className="border-b border-blue-950/60 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
+      {/* Top Header */}
+      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               href="/"
               className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
-              title="Do'kon sahifasiga o'tish"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-white p-0.5 border border-blue-600 flex items-center justify-center shrink-0">
-                <img src="/logo.svg" alt="Comfort Textile" className="w-full h-full object-contain" />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-white p-0.5 border border-blue-600 shrink-0">
+                <img src="/logo.png" alt="Comfort Textile" className="w-full h-full object-contain" />
               </div>
               <div>
-                <h1 className="font-extrabold text-sm sm:text-base tracking-tight text-white flex items-center gap-2 leading-none">
-                  <span>Comfort Textile Rahbariyat Paneli</span>
+                <h1 className="font-extrabold text-sm sm:text-base text-white leading-none">
+                  Comfort Textile Analitika va Boshqaruv
                 </h1>
-                <p className="text-[11px] text-slate-400 mt-0.5">Murojaatlar va Shikoyatlar Nazorati</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">To'liq monitoring va hisobotlar</p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
-              onClick={fetchFeedbacks}
+              onClick={loadData}
               className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all active:rotate-180"
               title="Yangilash"
             >
@@ -123,76 +162,179 @@ export default function AdminPage() {
             </button>
             <Link
               href="/poster"
-              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5"
             >
               <QrCode className="w-3.5 h-3.5 text-blue-400" />
               <span className="hidden sm:inline">QR Plakat</span>
             </Link>
             <Link
               href="/admin/settings"
-              className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-blue-600/30"
+              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5"
             >
-              <Settings className="w-3.5 h-3.5" />
-              <span>Telegram Sozlamalari</span>
+              <Settings className="w-3.5 h-3.5 text-slate-400" />
+              <span>Sozlamalar</span>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
+      {/* Asosiy kontent */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 space-y-6">
-        
-        {/* KPI kartochkalari */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-            <p className="text-xs font-medium text-slate-400">Jami Murojaatlar</p>
-            <p className="text-2xl font-black text-white mt-1">{totalCount}</p>
-            <p className="text-[10px] text-slate-500 mt-0.5">Barcha bo'limlar</p>
-          </div>
 
-          <div className="p-4 rounded-2xl bg-rose-950/20 border border-rose-500/30">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-rose-300">E'tirozlar</p>
-              <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-            </div>
-            <p className="text-2xl font-black text-rose-200 mt-1">{complaintCount}</p>
-            <p className="text-[10px] text-rose-400/80 mt-0.5">
-              {totalCount > 0 ? Math.round((complaintCount / totalCount) * 100) : 0}% ulush
+        {/* 1. KUNLIK KECHKI HISOBOT TELEGRAMGA YUBORISH BLOKI */}
+        <div className="bg-gradient-to-r from-blue-950/70 via-slate-900 to-slate-900 border border-blue-900/60 rounded-3xl p-5 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+              <BarChart3 className="w-4 h-4" />
+              <span>Kechki Avtomatlashtirilgan Hisobot</span>
+            </span>
+            <h2 className="text-base sm:text-lg font-black text-white">
+              Kunlik to'liq tahlilni Telegram guruhga yuborish
+            </h2>
+            <p className="text-xs text-slate-400 max-w-xl leading-relaxed">
+              Bugun nechta odam kirdi, nechtasi fikr yozdi, qaysi matolar yetishmayapti va asosiy e'tirozlar qaysi sohadaligini Telegram guruhga hisobot sifatida uzatadi.
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-blue-950/30 border border-blue-500/30">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-blue-300">Takliflar</p>
-              <Lightbulb className="w-3.5 h-3.5 text-blue-400" />
-            </div>
-            <p className="text-2xl font-black text-blue-200 mt-1">{suggestionCount}</p>
-            <p className="text-[10px] text-blue-400/80 mt-0.5">Yangi matolar/g'oyalar</p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-emerald-300">Minnatdorchilik</p>
-              <Heart className="w-3.5 h-3.5 text-emerald-400" />
-            </div>
-            <p className="text-2xl font-black text-emerald-200 mt-1">{praiseCount}</p>
-            <p className="text-[10px] text-emerald-400/80 mt-0.5">Xizmat ma'qul kelgan</p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 col-span-2 sm:col-span-1">
-            <p className="text-xs font-medium text-slate-400">O'rtacha Baho</p>
-            <p className="text-2xl font-black text-blue-400 mt-1 flex items-center gap-1">
-              <span>{avgRating}</span>
-              <span className="text-xs font-normal text-slate-400">/ 5.0</span>
-            </p>
-            <p className="text-[10px] text-slate-500 mt-0.5">
-              Hal qilingan: {resolvedCount} ta
-            </p>
-          </div>
+          <button
+            onClick={handleSendReportNow}
+            disabled={isSendingReport}
+            className="px-5 py-3.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 shrink-0 disabled:opacity-50"
+          >
+            {isSendingReport ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Hisobot tayyorlanmoqda...</span>
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                <span>Guruhga Kechki Hisobotni Yuborish</span>
+              </>
+            )}
+          </button>
         </div>
 
-        {/* Filtrlar paneli */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+        {/* Hisobot yuborilganlik natijasi */}
+        {reportResult && (
+          <div
+            className={`p-4 rounded-2xl border text-xs flex items-center gap-2.5 ${
+              reportResult.success
+                ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
+                : 'bg-rose-950/40 border-rose-500/40 text-rose-200'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+            <span>{reportResult.message}</span>
+          </div>
+        )}
+
+        {/* 2. REAL-VAQT ASOSIY KPI KO'RSATKICHLARI (Kirdi / To'ldirdi / Konversiya) */}
+        {reportData && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            
+            {/* Saytga kirganlar */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-xs font-semibold">QR dan Kirganlar</span>
+                <Eye className="w-4 h-4 text-blue-400" />
+              </div>
+              <p className="text-3xl font-black text-white mt-1">{reportData.totalVisits}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Mebel ustalari & xaridorlar</p>
+            </div>
+
+            {/* Fikr yozganlar */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-xs font-semibold">Fikr qoldirganlar</span>
+                <Users className="w-4 h-4 text-emerald-400" />
+              </div>
+              <p className="text-3xl font-black text-emerald-400 mt-1">{reportData.totalSubmissions}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">To'ldirilgan murojaatlar</p>
+            </div>
+
+            {/* Konversiya darajasi */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-xs font-semibold">Konversiya (Faollik)</span>
+                <TrendingUp className="w-4 h-4 text-sky-400" />
+              </div>
+              <p className="text-3xl font-black text-sky-300 mt-1">{reportData.conversionRate}%</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Kirganlarning fikr yozish ulushi</p>
+            </div>
+
+            {/* O'rtacha baho */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="text-xs font-semibold">O'rtacha Qoniqish</span>
+                <span className="text-amber-400 text-xs font-bold">★</span>
+              </div>
+              <p className="text-3xl font-black text-amber-400 mt-1">
+                {reportData.avgRating} <span className="text-xs font-normal text-slate-500">/ 5.0</span>
+              </p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Mijozlar mamnuniyati</p>
+            </div>
+
+          </div>
+        )}
+
+        {/* 3. CHUQUR ANALITIKA: Kimlar yozdi? Top tovarlar va E'tirozlar */}
+        {reportData && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {/* Mijozlar kimlar (Rollar) */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-blue-400" />
+                <span>Mijozlar toifasi (Kimlar):</span>
+              </h3>
+              <div className="space-y-2">
+                {reportData.clientRolesBreakdown.map((r) => (
+                  <div key={r.role} className="flex items-center justify-between text-xs">
+                    <span className="text-slate-300">{r.role}</span>
+                    <span className="font-bold text-white bg-slate-800 px-2 py-0.5 rounded-lg">
+                      {r.count} ta ({r.percentage}%)
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Ustalar so'ragan / Yetishmayotgan tovarlar (Assortiment kengaytirish) */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Search className="w-3.5 h-3.5 text-amber-400" />
+                <span>Yetishmayotgan tovarlar:</span>
+              </h3>
+              <div className="space-y-1.5">
+                {reportData.requestedProducts.length > 0 ? (
+                  reportData.requestedProducts.slice(0, 4).map((item, idx) => (
+                    <div key={idx} className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-amber-200 truncate">
+                      • {item}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-500 italic">Hozircha maxsus tovar so'ralmadi</p>
+                )}
+              </div>
+            </div>
+
+            {/* Aqlli Tahlil va Rahbariyatga Xulosa (AI Summary) */}
+            <div className="bg-slate-900 border border-blue-900/40 rounded-2xl p-4 space-y-2">
+              <h3 className="text-xs font-bold text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Lightbulb className="w-3.5 h-3.5 text-blue-400" />
+                <span>Kunlik tahlil xulosasi:</span>
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
+                {reportData.aiSummary}
+              </p>
+            </div>
+
+          </div>
+        )}
+
+        {/* 4. FILTR VA MUROJAATLAR RO'YXATI */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-slate-400 flex items-center gap-1">
               <Filter className="w-3.5 h-3.5 text-blue-400" />
@@ -202,56 +344,38 @@ export default function AdminPage() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500"
+              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-white focus:outline-none"
             >
               <option value="all">Barcha turlar</option>
-              <option value="complaint">🔴 Faqat E'tirozlar</option>
-              <option value="suggestion">🔵 Faqat Takliflar</option>
-              <option value="praise">🟢 Faqat Rahmatlar</option>
+              <option value="complaint">🔴 E'tirozlar</option>
+              <option value="suggestion">🔵 Takliflar</option>
+              <option value="praise">🟢 Rahmatlar</option>
             </select>
 
             <select
-              value={filterDept}
-              onChange={(e) => setFilterDept(e.target.value)}
-              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500"
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-white focus:outline-none"
             >
-              <option value="all">Barcha tovarlar/bo'limlar</option>
-              {DEPARTMENTS.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.title}
+              <option value="all">Barcha mijozlar</option>
+              {CLIENT_ROLES.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.title}
                 </option>
               ))}
             </select>
-
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500"
-            >
-              <option value="all">Barcha holatlar</option>
-              <option value="new">⏳ Yangi</option>
-              <option value="investigating">🔍 O'rganilmoqda</option>
-              <option value="resolved">✅ Hal qilindi</option>
-            </select>
           </div>
 
-          <span className="text-slate-400 text-xs">
-            Natija: <b>{filteredFeedbacks.length}</b> ta murojaat
+          <span className="text-slate-400">
+            Jami: <b>{filteredFeedbacks.length}</b> ta murojaat
           </span>
         </div>
 
         {/* Murojaatlar Ro'yxati */}
         {loading ? (
-          <div className="py-20 text-center text-slate-500 text-sm">
-            Murojaatlar yuklanmoqda...
-          </div>
-        ) : filteredFeedbacks.length === 0 ? (
-          <div className="py-20 text-center bg-slate-900/40 border border-dashed border-slate-800 rounded-3xl p-8">
-            <p className="text-slate-400 font-semibold text-sm">Hozircha bunday murojaat yo'q</p>
-            <p className="text-xs text-slate-500 mt-1">Filtr parametrlarini o'zgartirib ko'ring.</p>
-          </div>
+          <div className="py-20 text-center text-slate-500 text-sm">Yuklanmoqda...</div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filteredFeedbacks.map((item) => {
               const ratingData = RATINGS.find((r) => r.score === item.rating);
               const isUpdating = updatingId === item.id;
@@ -259,47 +383,42 @@ export default function AdminPage() {
               return (
                 <div
                   key={item.id}
-                  className="bg-slate-900 border border-slate-800/90 hover:border-blue-900/60 rounded-2xl p-5 transition-all shadow-md space-y-4"
+                  className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 transition-all space-y-3"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
                     <div className="flex flex-wrap items-center gap-2">
                       {item.type === 'complaint' && (
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5" /> E'tiroz
+                        <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                          🔴 E'tiroz
                         </span>
                       )}
                       {item.type === 'suggestion' && (
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center gap-1.5">
-                          <Lightbulb className="w-3.5 h-3.5" /> Taklif
+                        <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                          🔵 Taklif
                         </span>
                       )}
                       {item.type === 'praise' && (
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
-                          <Heart className="w-3.5 h-3.5" /> Minnatdorchilik
+                        <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          🟢 Rahmat
                         </span>
                       )}
 
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">
-                        {getDeptName(item.department)}
+                      <span className="text-xs px-2 py-0.5 rounded-lg bg-blue-950/60 text-blue-300 border border-blue-900/40 font-medium">
+                        {getRoleTitle(item.clientRole)}
                       </span>
 
-                      <span className="text-xs text-slate-400 flex items-center gap-1">
-                        <Building2 className="w-3.5 h-3.5 text-slate-500" />
-                        {item.storeBranch}
+                      <span className="text-xs px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300">
+                        {getDeptName(item.department)}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1 text-xs text-blue-400 font-bold bg-slate-800 px-2 py-1 rounded-lg">
-                        <span>{ratingData?.emoji}</span>
-                        <span>{item.rating}/5</span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-amber-400 font-bold bg-slate-800 px-2 py-0.5 rounded-lg">
+                        {ratingData?.emoji} {item.rating}/5
+                      </span>
                       <span className="text-xs text-slate-500 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {new Date(item.createdAt).toLocaleString('uz-UZ', {
-                          timeZone: 'Asia/Tashkent',
-                          day: '2-digit',
-                          month: 'short',
+                        {new Date(item.createdAt).toLocaleTimeString('uz-UZ', {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
@@ -307,65 +426,74 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <div className="text-sm text-slate-200 leading-relaxed font-normal bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/60">
-                    {item.text || <i className="text-slate-500">(Faqat media yoki ovozli xabar)</i>}
-                  </div>
+                  {/* Agar kerakli tovar bo'lsa */}
+                  {item.requestedProduct && (
+                    <div className="p-2.5 rounded-xl bg-amber-950/20 border border-amber-500/30 text-xs text-amber-200 flex items-center gap-2">
+                      <Search className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span><b>Soʻralgan tovar:</b> {item.requestedProduct}</span>
+                    </div>
+                  )}
 
+                  {/* Tezkor teglar */}
+                  {item.quickTags && item.quickTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.quickTags.map((tag) => (
+                        <span key={tag} className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Matn */}
+                  {item.text && (
+                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed bg-slate-950/40 p-3 rounded-xl border border-slate-800/60">
+                      {item.text}
+                    </p>
+                  )}
+
+                  {/* Audio va Rasm */}
                   {(item.audioUrl || item.imageUrl) && (
-                    <div className="flex flex-wrap items-center gap-4 pt-1">
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
                       {item.audioUrl && (
-                        <div className="flex items-center gap-2 bg-slate-800 p-2 rounded-xl border border-slate-700">
+                        <div className="flex items-center gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
                           <Volume2 className="w-4 h-4 text-blue-400" />
-                          <audio controls src={item.audioUrl} className="h-8 w-60" />
+                          <audio controls src={item.audioUrl} className="h-7 w-52" />
                         </div>
                       )}
-
                       {item.imageUrl && (
                         <a
                           href={item.imageUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-750 p-2 rounded-xl border border-slate-700 text-xs text-sky-400 transition-colors"
+                          className="flex items-center gap-1.5 bg-slate-800 p-2 rounded-xl text-xs text-blue-400 hover:text-blue-300"
                         >
-                          <ImageIcon className="w-4 h-4" />
-                          <span>Biriktirilgan rasmni ko'rish</span>
+                          <ImageIcon className="w-3.5 h-3.5" />
+                          <span>Rasmni ochish</span>
                         </a>
                       )}
                     </div>
                   )}
 
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/60 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400">Holati:</span>
-                      {item.status === 'new' && (
-                        <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-semibold border border-amber-500/20">
-                          ⏳ Yangi
-                        </span>
-                      )}
-                      {item.status === 'investigating' && (
-                        <span className="px-2 py-0.5 rounded-md bg-sky-500/10 text-sky-400 font-semibold border border-sky-500/20">
-                          🔍 O'rganilmoqda
-                        </span>
-                      )}
-                      {item.status === 'resolved' && (
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20">
-                          ✅ Hal qilindi
-                        </span>
-                      )}
-                    </div>
-
+                  {/* Holat */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs">
+                    <span className="text-slate-400">
+                      Holati: <b className={item.status === 'resolved' ? 'text-emerald-400' : 'text-amber-400'}>
+                        {item.status === 'resolved' ? '✅ Hal qilindi' : item.status === 'investigating' ? '🔍 Oʻrganilmoqda' : '⏳ Yangi'}
+                      </b>
+                    </span>
                     <div className="flex items-center gap-1.5">
                       <button
                         disabled={isUpdating || item.status === 'investigating'}
                         onClick={() => handleStatusChange(item.id, 'investigating')}
-                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-sky-950 text-slate-300 hover:text-sky-300 border border-slate-700 text-xs transition-colors disabled:opacity-40"
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs hover:bg-slate-700 disabled:opacity-40"
                       >
                         O'rganishga olish
                       </button>
                       <button
                         disabled={isUpdating || item.status === 'resolved'}
                         onClick={() => handleStatusChange(item.id, 'resolved')}
-                        className="px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 text-xs transition-colors disabled:opacity-40 font-medium"
+                        className="px-2.5 py-1 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-500/30 text-xs hover:bg-emerald-900 disabled:opacity-40"
                       >
                         Hal qilindi
                       </button>
@@ -376,6 +504,7 @@ export default function AdminPage() {
             })}
           </div>
         )}
+
       </main>
     </div>
   );

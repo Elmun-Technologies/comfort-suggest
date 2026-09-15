@@ -1,5 +1,20 @@
 [
   {
+    "id": "fb-1789496297391-5l80q",
+    "createdAt": "2026-09-15T18:18:17.391Z",
+    "type": "complaint",
+    "rating": 2,
+    "department": "cutting_warehouse",
+    "storeBranch": "Bosh do'kon (Markaziy)",
+    "clientRole": "master",
+    "requestedProduct": "Kulrang jakkard",
+    "quickTags": [
+      "Omborda uzoq kutdim"
+    ],
+    "text": "Kesimda navbat ko'p ekan",
+    "status": "new"
+  },
+  {
     "id": "fb-1789494363569-xyqf2",
     "createdAt": "2026-09-15T17:46:03.569Z",
     "type": "complaint",

@@ -19,7 +19,18 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const { type, rating, department, storeBranch, text, audioUrl, imageUrl } = body;
+    const {
+      type,
+      rating,
+      department,
+      storeBranch,
+      clientRole,
+      requestedProduct,
+      quickTags,
+      text,
+      audioUrl,
+      imageUrl,
+    } = body;
 
     if (!type || !rating || !department) {
       return NextResponse.json(
@@ -28,9 +39,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!text && !audioUrl && !imageUrl) {
+    if (!text && !audioUrl && !imageUrl && !requestedProduct && (!quickTags || quickTags.length === 0)) {
       return NextResponse.json(
-        { success: false, error: "Iltimos, matn yozing, ovoz yozib qoldiring yoki rasm yuklang" },
+        { success: false, error: "Iltimos, fikringizni yozing yoki ovozli xabar qoldiring" },
         { status: 400 }
       );
     }
@@ -42,6 +53,9 @@ export async function POST(req: NextRequest) {
       rating: Number(rating) as any,
       department,
       storeBranch: storeBranch || "Bosh do'kon (Markaziy)",
+      clientRole: clientRole || 'master',
+      requestedProduct: requestedProduct ? requestedProduct.trim() : undefined,
+      quickTags: Array.isArray(quickTags) ? quickTags : [],
       text: (text || '').trim(),
       audioUrl: audioUrl || undefined,
       imageUrl: imageUrl || undefined,
@@ -51,7 +65,7 @@ export async function POST(req: NextRequest) {
     // Mahalliy faylga saqlash
     saveFeedback(newItem);
 
-    // Telegramga yuborish
+    // Telegramga darhol yuborish
     const tgConfig = getTelegramConfig();
     let tgResult = { success: true };
     if (tgConfig.enabled && tgConfig.botToken && tgConfig.chatId) {
