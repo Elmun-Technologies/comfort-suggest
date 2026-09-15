@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
 import {
@@ -11,34 +11,85 @@ import {
   Smartphone,
   Copy,
   Check,
+  Sparkles,
+  Download,
 } from 'lucide-react';
 import { STORE_NAME, STORE_TAGLINE } from '@/lib/constants';
 
 export default function PosterPage() {
   const [qrUrl, setQrUrl] = useState('');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [withCenterLogo, setWithCenterLogo] = useState(true);
   const [copied, setCopied] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState("Bosh do'kon (Kiraverish)");
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const origin = window.location.origin;
       setQrUrl(origin);
-      generateQr(origin);
+      generateQrCode(origin, withCenterLogo);
     }
   }, []);
 
-  const generateQr = async (text: string) => {
+  const generateQrCode = async (text: string, includeLogo: boolean) => {
+    if (!text) return;
     try {
-      const dataUrl = await QRCode.toDataURL(text, {
-        width: 650,
+      // 1. Asosiy QR-kodni yuqori error correction ('H') bilan yaratish
+      const canvas = document.createElement('canvas');
+      const size = 800; // Yuqori aniqlik (chop etish uchun)
+      canvas.width = size;
+      canvas.height = size;
+
+      await QRCode.toCanvas(canvas, text, {
+        width: size,
         margin: 2,
+        errorCorrectionLevel: 'H', // Markazga logo qo'yganda ham 100% o'qilishi uchun
         color: {
           dark: '#1d3b8a', // Comfort Textile ko'k rangi
           light: '#ffffff',
         },
       });
-      setQrDataUrl(dataUrl);
+
+      // 2. Agar markazda logo kerak bo'lsa
+      if (includeLogo) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          const logoImg = new Image();
+          logoImg.src = '/logo.png';
+          await new Promise((resolve) => {
+            logoImg.onload = resolve;
+            logoImg.onerror = resolve;
+          });
+
+          // Markaziy logo o'lchami (QR hajmiga nisbatan 22%)
+          const logoSize = size * 0.23;
+          const center = (size - logoSize) / 2;
+          const radius = logoSize / 2;
+
+          ctx.save();
+          // Oq fon va nozik ramka chizish
+          ctx.beginPath();
+          ctx.arc(size / 2, size / 2, radius + 12, 0, Math.PI * 2, true);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.lineWidth = 6;
+          ctx.strokeStyle = '#1d3b8a';
+          ctx.stroke();
+
+          // Logotipni doira shaklida qirqib chizish
+          ctx.beginPath();
+          ctx.arc(size / 2, size / 2, radius, 0, Math.PI * 2, true);
+          ctx.closePath();
+          ctx.clip();
+
+          ctx.drawImage(logoImg, center, center, logoSize, logoSize);
+          ctx.restore();
+        }
+      }
+
+      setQrDataUrl(canvas.toDataURL('image/png'));
     } catch (err) {
       console.error('QR generation error:', err);
     }
@@ -47,7 +98,12 @@ export default function PosterPage() {
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQrUrl(val);
-    generateQr(val);
+    generateQrCode(val, withCenterLogo);
+  };
+
+  const toggleCenterLogo = (val: boolean) => {
+    setWithCenterLogo(val);
+    generateQrCode(qrUrl, val);
   };
 
   const handlePrint = () => {
@@ -60,9 +116,17 @@ export default function PosterPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const downloadQrOnly = () => {
+    if (!qrDataUrl) return;
+    const a = document.createElement('a');
+    a.href = qrDataUrl;
+    a.download = 'comfort-textile-qr.png';
+    a.click();
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Chop etishda ko'rinmaydigan boshqaruv paneli */}
+      {/* Ekranda ko'rinadigan yuqori panel (Chop etishda yashiriladi) */}
       <header className="print:hidden border-b border-blue-950/60 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link
@@ -76,11 +140,20 @@ export default function PosterPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={downloadQrOnly}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-all border border-slate-700"
+              title="Faqat QR-kod rasmini yuklab olish"
+            >
+              <Download className="w-3.5 h-3.5 text-blue-400" />
+              <span className="hidden sm:inline">QR rasmni yuklab olish</span>
+            </button>
+            <button
+              type="button"
               onClick={handlePrint}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition-all shadow-lg shadow-blue-600/30"
             >
               <Printer className="w-4 h-4" />
-              <span>Chop etish (A4 Flayer)</span>
+              <span>Chop etish (A4 Plakat)</span>
             </button>
           </div>
         </div>
@@ -111,28 +184,41 @@ export default function PosterPage() {
             className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 font-mono focus:border-blue-500 focus:outline-none"
           />
 
-          <p className="text-[11px] text-slate-400">
-            ℹ️ <b>Maslahat:</b> Ushbu plakatni rangli printerda A4 formatda chop eting va doʻkon kiraverishiga, matolarni kesish stoli yoniga hamda kassa peshtaxtasiga osib qoʻying. Mebel ustalari telefon kamerasini yo'naltirib, darhol anonim fikr qoldirishadi.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800">
+            {/* Markaziy logo kaliti */}
+            <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+              <input
+                type="checkbox"
+                checked={withCenterLogo}
+                onChange={(e) => toggleCenterLogo(e.target.checked)}
+                className="w-4 h-4 accent-blue-600 rounded cursor-pointer"
+              />
+              <span>QR-kod markazida <b>Comfort Textile logosi</b> bo'lsin</span>
+            </label>
+
+            <span className="text-[11px] text-slate-400">
+              Yuqori aniqlik (Ultra-HD Vector)
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Chop etiladigan A4 Poster Plakati (Print va Screen uchun moslashgan) */}
       <main className="flex-1 flex items-center justify-center p-4 print:p-0">
-        <div className="poster-card w-full max-w-[550px] print:max-w-none print:w-full print:h-screen bg-white text-slate-900 rounded-3xl print:rounded-none shadow-2xl print:shadow-none border-2 border-slate-200 print:border-none p-6 sm:p-8 flex flex-col justify-between items-center text-center relative overflow-hidden">
+        <div className="poster-card w-full max-w-[560px] print:max-w-none print:w-full print:h-screen bg-white text-slate-900 rounded-3xl print:rounded-none shadow-2xl print:shadow-none border-2 border-slate-200 print:border-none p-6 sm:p-8 flex flex-col justify-between items-center text-center relative overflow-hidden">
           
-          {/* Yuqori brend bloki: Logotip va Sarlavha */}
+          {/* Yuqori brend bloki */}
           <div className="w-full flex items-center justify-between border-b-2 border-blue-900 pb-3 mb-2">
             <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-full p-0.5 bg-white border-2 border-blue-900 flex items-center justify-center shrink-0">
-                <img src="/logo.svg" alt="Comfort Textile" className="w-full h-full object-contain" />
+              <div className="w-16 h-16 rounded-full p-1 bg-white border-2 border-blue-900 flex items-center justify-center shrink-0 shadow-sm">
+                <img src="/logo.png" alt="Comfort Textile" className="w-full h-full object-contain" />
               </div>
               <div className="text-left">
-                <h2 className="text-2xl font-black tracking-tight text-blue-900 uppercase leading-none">
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-blue-900 uppercase leading-none">
                   COMFORT TEXTILE
                 </h2>
-                <p className="text-[11px] font-bold text-slate-600 tracking-wide uppercase mt-1">
-                  Mebel matolari va furnituralari
+                <p className="text-[11px] sm:text-xs font-bold text-slate-600 tracking-wide uppercase mt-1">
+                  Mebel matolari, porolon va furnituralari
                 </p>
               </div>
             </div>
@@ -141,10 +227,10 @@ export default function PosterPage() {
             </div>
           </div>
 
-          {/* Asosiy murojaat sarlavhasi */}
+          {/* Sarlavha */}
           <div className="my-1">
             <span className="inline-block px-3 py-1 rounded-full text-xs font-extrabold bg-blue-100 text-blue-900 border border-blue-200 mb-1.5">
-              📢 Hurmatli Mebel ustalari va Xaridorlar!
+              📢 Hurmatli Mebel ustalari va Mijozlarimiz!
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight leading-tight">
               E'tiroz yoki Taklifingiz bormi?
@@ -155,15 +241,15 @@ export default function PosterPage() {
           </div>
 
           {/* QR Kod bloki */}
-          <div className="my-2 p-4 bg-slate-50 border-4 border-blue-900 rounded-3xl flex flex-col items-center shadow-md">
+          <div className="my-2 p-3 sm:p-4 bg-slate-50 border-4 border-blue-900 rounded-3xl flex flex-col items-center shadow-md">
             {qrDataUrl ? (
               <img
                 src={qrDataUrl}
                 alt="Comfort Textile QR Kod"
-                className="w-52 h-52 sm:w-60 sm:h-60 object-contain"
+                className="w-56 h-56 sm:w-64 sm:h-64 object-contain rounded-xl"
               />
             ) : (
-              <div className="w-52 h-52 flex items-center justify-center text-slate-400">
+              <div className="w-56 h-56 flex items-center justify-center text-slate-400">
                 QR kod yuklanmoqda...
               </div>
             )}
@@ -205,7 +291,7 @@ export default function PosterPage() {
             <div>
               <p className="text-xs font-bold text-blue-950">100% Anonimlik kafolatlanadi</p>
               <p className="text-[10px] text-blue-800 leading-tight">
-                Telefon yoki ism so'ralmaydi. Hech narsadan tortinmay ochiq fikr bildiring!
+                Telefon raqam yoki ism so'ralmaydi. To'liq erkin va ochiq fikr bildiring!
               </p>
             </div>
           </div>
