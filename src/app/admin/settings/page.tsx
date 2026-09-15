@@ -12,6 +12,9 @@ import {
   MessageSquare,
   HelpCircle,
   Save,
+  AlertTriangle,
+  Server,
+  Info,
 } from 'lucide-react';
 import { TelegramConfig } from '@/types';
 
@@ -24,7 +27,8 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
 
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning'; text: string; details?: string[] } | null>(null);
+  const [meta, setMeta] = useState<any>(null);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -35,6 +39,7 @@ export default function SettingsPage() {
           setChatId(data.data.chatId || '');
           setEnabled(data.data.enabled ?? true);
         }
+        if (data.meta) setMeta(data.meta);
       })
       .catch((err) => console.error(err))
       .finally(() => setIsLoading(false));
@@ -54,12 +59,44 @@ export default function SettingsPage() {
 
       const data = await res.json();
       if (data.success) {
-        setMessage({ type: 'success', text: "Sozlamalar muvaffaqiyatli saqlandi!" });
+        let text = "Sozlamalar muvaffaqiyatli saqlandi!";
+        if (data.warning) {
+          setMessage({ type: 'warning', text: text + " " + data.warning, details: data.fix?.steps });
+        } else {
+          setMessage({ type: 'success', text });
+        }
       } else {
-        setMessage({ type: 'error', text: data.error || 'Saqlashda xatolik yuz berdi' });
+        if (data.isReadOnly) {
+          // Read-only xatolik - maxsus ko'rsatish
+          setMessage({
+            type: 'warning',
+            text: data.warning || data.error || "Fayl tizimi read-only. Lekin bot vaqtincha ishlayapti!",
+            details: data.fix?.steps || [
+              "Vercel Dashboard -> Settings -> Environment Variables",
+              "TELEGRAM_BOT_TOKEN = sizning tokeningiz",
+              "TELEGRAM_CHAT_ID = guruh ID (-100...)",
+              "Save va Redeploy qiling"
+            ]
+          });
+        } else {
+          setMessage({ type: 'error', text: data.error || 'Saqlashda xatolik yuz berdi' });
+        }
       }
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Xatolik yuz berdi' });
+      const msg = err.message || 'Xatolik yuz berdi';
+      if (msg.includes('read-only') || msg.includes('EROFS')) {
+        setMessage({
+          type: 'warning',
+          text: "Fayl tizimi read-only bo'lgani uchun saqlab bo'lmadi, lekin test xabar ishlagan bo'lsa bot vaqtincha ishlayapti. Doimiy saqlash uchun Vercel Environment Variables ishlating.",
+          details: [
+            "Vercel Dashboard -> Settings -> Environment Variables",
+            "TELEGRAM_BOT_TOKEN va TELEGRAM_CHAT_ID qo'shing",
+            "Redeploy qiling"
+          ]
+        });
+      } else {
+        setMessage({ type: 'error', text: msg });
+      }
     } finally {
       setIsSaving(false);
     }
@@ -88,7 +125,7 @@ export default function SettingsPage() {
       if (data.success) {
         setMessage({
           type: 'success',
-          text: data.message || "Telegram guruhga muvaffaqiyatli test xabari yuborildi!",
+          text: data.message || "Telegram guruhga muvaffaqiyatli test xabari yuborildi! Endi Saqlashni bosing.",
         });
       } else {
         setMessage({
@@ -103,9 +140,17 @@ export default function SettingsPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Header (Oddiy, fixed emas) */}
+      {/* Header */}
       <header className="border-b border-slate-800 bg-slate-900 py-3">
         <div className="max-w-3xl mx-auto px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -135,22 +180,64 @@ export default function SettingsPage() {
       {/* Main Container */}
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6 space-y-6">
         
+        {meta?.isProd && (
+          <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-950/20 flex items-start gap-3 text-xs leading-relaxed">
+            <Server className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-bold text-amber-200">Production muhit aniqlandi (Vercel)</p>
+              <p className="mt-1 text-amber-200/80">
+                Bu muhitda <code className="bg-amber-900/40 px-1.5 py-0.5 rounded text-amber-100">data/</code> papkasi read-only. 
+                Sozlamalar <code className="bg-amber-900/40 px-1.5 py-0.5 rounded">/tmp/comfort-data</code> ga vaqtincha saqlanadi.
+                Doimiy saqlash uchun Vercel Dashboard → Settings → Environment Variables da <b>TELEGRAM_BOT_TOKEN</b> va <b>TELEGRAM_CHAT_ID</b> ni qo'shing.
+              </p>
+              {meta.hasEnvToken && (
+                <p className="mt-2 text-emerald-300 flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>ENV dan token topildi - doimiy ishlaydi</span>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {message && (
           <div
             className={`p-4 rounded-2xl border flex items-start gap-3 text-xs leading-relaxed ${
               message.type === 'success'
                 ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
+                : message.type === 'warning'
+                ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
                 : 'bg-rose-950/40 border-rose-500/40 text-rose-200'
             }`}
           >
             {message.type === 'success' ? (
               <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+            ) : message.type === 'warning' ? (
+              <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
             ) : (
               <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
             )}
             <div className="flex-1">
-              <p className="font-semibold">{message.type === 'success' ? 'Bajarildi' : 'Xatolik'}</p>
-              <p className="mt-0.5">{message.text}</p>
+              <p className="font-semibold">
+                {message.type === 'success' ? 'Bajarildi' : message.type === 'warning' ? 'Diqqat - Vaqtincha yechim' : 'Xatolik'}
+              </p>
+              <p className="mt-0.5 whitespace-pre-wrap">{message.text}</p>
+              {message.details && message.details.length > 0 && (
+                <div className="mt-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                  <p className="font-bold text-[11px] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <Info className="w-3 h-3" />
+                    <span>Doimiy yechim qadamlari:</span>
+                  </p>
+                  <ul className="space-y-1">
+                    {message.details.map((step, i) => (
+                      <li key={i} className="flex items-start gap-1.5">
+                        <span className="text-slate-500">•</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -233,6 +320,12 @@ export default function SettingsPage() {
               <span>Sozlamalarni Saqlash</span>
             </button>
           </div>
+
+          {meta?.isProd && (
+            <p className="text-[11px] text-slate-500 border-t border-slate-800 pt-3">
+              💡 <b>Maslahat:</b> Test xabar keldi degani bot to'g'ri ishlayapti degani. Agar saqlashda read-only xatosi chiqsa ham, bot hozircha /tmp da va xotirada saqlanib ishlayveradi. Lekin keyingi deploy'da o'chib ketmasligi uchun ENV ga qo'shing.
+            </p>
+          )}
         </form>
 
         <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4">
@@ -274,6 +367,18 @@ export default function SettingsPage() {
                 <p className="font-semibold text-slate-100">Guruh ID sini olish:</p>
                 <p className="text-slate-400 mt-0.5">
                   Guruhga <b className="text-slate-200">@myidbot</b> yoki <b className="text-slate-200">@RawDataBot</b> ni qo'shib, guruh ID sini oling (masalan <code>-100...</code>) va shu yerga kiritib test qiling.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <span className="w-5 h-5 rounded-full bg-amber-900/50 text-amber-400 font-bold flex items-center justify-center shrink-0 mt-0.5">
+                4
+              </span>
+              <div>
+                <p className="font-semibold text-amber-200">Production'da doimiy saqlash (Vercel):</p>
+                <p className="text-slate-400 mt-0.5">
+                  Vercel Dashboard → Sizning loyihangiz → <b>Settings → Environment Variables</b> → <code>TELEGRAM_BOT_TOKEN</code> va <code>TELEGRAM_CHAT_ID</code> qo'shing → <b>Save</b> → <b>Redeploy</b>.
                 </p>
               </div>
             </div>

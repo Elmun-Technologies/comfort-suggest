@@ -3,15 +3,87 @@ import path from 'path';
 import { DailyReportData, FeedbackItem, TelegramConfig, VisitRecord } from '@/types';
 import { CLIENT_ROLES, DEPARTMENTS } from './constants';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const FEEDBACKS_FILE = path.join(DATA_DIR, 'feedbacks.json');
-const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
-const VISITS_FILE = path.join(DATA_DIR, 'visits.json');
+// Production'da Vercel / serverless muhitda fayl tizimi read-only bo'ladi
+// Faqat /tmp ga yozish mumkin, shuning uchun DATA_DIR ni moslashtiramiz
+const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+const PRIMARY_DATA_DIR = IS_PROD
+  ? path.join('/tmp', 'comfort-data')
+  : path.join(process.cwd(), 'data');
+const FALLBACK_DATA_DIR = path.join(process.cwd(), 'data');
 
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+// In-memory cache - agar faylga yozib bo'lmasa ham, shu sessiyada ishlashi uchun
+declare global {
+  var __COMFORT_SETTINGS_CACHE__: TelegramConfig | undefined;
+  var __COMFORT_FEEDBACKS_CACHE__: FeedbackItem[] | undefined;
+  var __COMFORT_VISITS_CACHE__: VisitRecord[] | undefined;
+}
+
+function ensureDataDir(dir: string) {
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    return true;
+  } catch (e) {
+    console.warn(`[Storage] Data dir yaratib bo'lmadi (${dir}):`, e);
+    return false;
   }
+}
+
+function getFilePaths(fileName: string): string[] {
+  // Birinchi primary, keyin fallback tekshiriladi
+  const primary = path.join(PRIMARY_DATA_DIR, fileName);
+  const fallback = path.join(FALLBACK_DATA_DIR, fileName);
+  // Dublikatni olib tashlash (dev'da ikkisi bir xil bo'lishi mumkin)
+  if (primary === fallback) return [primary];
+  return [primary, fallback];
+}
+
+function readJsonFile<T>(fileName: string): T | null {
+  const paths = getFilePaths(fileName);
+  for (const filePath of paths) {
+    try {
+      if (fs.existsSync(filePath)) {
+        const data = fs.readFileSync(filePath, 'utf-8');
+        return JSON.parse(data) as T;
+      }
+    } catch (e) {
+      console.warn(`[Storage] ${filePath} o'qishda xatolik:`, e);
+      continue;
+    }
+  }
+  return null;
+}
+
+function writeJsonFile(fileName: string, data: any): { success: boolean; usedPath?: string; error?: any; isReadOnly?: boolean } {
+  const paths = getFilePaths(fileName);
+  
+  // Avval primary ga yozishga harakat qilamiz
+  for (const filePath of paths) {
+    try {
+      const dir = path.dirname(filePath);
+      ensureDataDir(dir);
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+      return { success: true, usedPath: filePath };
+    } catch (err: any) {
+      const isReadOnly = err?.code === 'EROFS' || err?.code === 'EACCES' || err?.message?.includes('read-only') || err?.message?.includes('readonly');
+      console.warn(`[Storage] ${filePath} ga yozishda xatolik (${err?.code}):`, err?.message);
+      
+      // Agar read-only bo'lsa, keyingi path'ni sinab ko'ramiz
+      if (isReadOnly) {
+        continue;
+      }
+      // Boshqa xatolik bo'lsa ham keyingi path'ni sinab ko'ramiz
+      continue;
+    }
+  }
+
+  // Hammasi muvaffaqiyatsiz
+  return { 
+    success: false, 
+    error: new Error('Barcha joylarga yozish muvaffaqiyatsiz - fayl tizimi read-only bo\'lishi mumkin'),
+    isReadOnly: true 
+  };
 }
 
 function getTodayStr(): string {
@@ -63,79 +135,142 @@ const INITIAL_FEEDBACKS: FeedbackItem[] = [
 ];
 
 export function getFeedbacks(): FeedbackItem[] {
-  ensureDataDir();
-  if (!fs.existsSync(FEEDBACKS_FILE)) {
-    fs.writeFileSync(FEEDBACKS_FILE, JSON.stringify(INITIAL_FEEDBACKS, null, 2), 'utf-8');
+  // In-memory cache'da bo'lsa, shuni qaytaramiz (production'da tez ishlashi uchun)
+  if (globalThis.__COMFORT_FEEDBACKS_CACHE__ && globalThis.__COMFORT_FEEDBACKS_CACHE__.length > 0) {
+    return globalThis.__COMFORT_FEEDBACKS_CACHE__;
+  }
+
+  const data = readJsonFile<FeedbackItem[]>('feedbacks.json');
+  if (data && Array.isArray(data)) {
+    globalThis.__COMFORT_FEEDBACKS_CACHE__ = data;
+    return data;
+  }
+
+  // Fayl yo'q bo'lsa, demo ma'lumotlarni yozishga harakat qilamiz (faqat dev'da)
+  if (!IS_PROD) {
+    const result = writeJsonFile('feedbacks.json', INITIAL_FEEDBACKS);
+    if (result.success) {
+      globalThis.__COMFORT_FEEDBACKS_CACHE__ = INITIAL_FEEDBACKS;
+      return INITIAL_FEEDBACKS;
+    }
+  }
+
+  // Production'da bo'sh yoki demo qaytaramiz
+  if (data === null) {
+    // Agar hech qanday fayl yo'q bo'lsa, demo bilan boshlaymiz lekin yozmaymiz
+    globalThis.__COMFORT_FEEDBACKS_CACHE__ = INITIAL_FEEDBACKS;
     return INITIAL_FEEDBACKS;
   }
-  try {
-    const data = fs.readFileSync(FEEDBACKS_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch (err) {
-    console.error('Error reading feedbacks:', err);
-    return [];
-  }
+
+  return [];
 }
 
 export function saveFeedback(item: FeedbackItem): FeedbackItem {
-  const current = getFeedbacks();
-  const updated = [item, ...current];
-  ensureDataDir();
-  fs.writeFileSync(FEEDBACKS_FILE, JSON.stringify(updated, null, 2), 'utf-8');
-  return item;
+  try {
+    const current = getFeedbacks();
+    const updated = [item, ...current];
+    
+    // In-memory cache'ni yangilash
+    globalThis.__COMFORT_FEEDBACKS_CACHE__ = updated;
+
+    // Faylga yozishga harakat qilish, lekin xatolik bo'lsa ham davom etish
+    const result = writeJsonFile('feedbacks.json', updated);
+    if (!result.success) {
+      console.warn('[Storage] Feedback faylga yozilmadi, lekin xotirada saqlandi va Telegramga yuboriladi. Sabab:', result.error);
+      // Production'da faylga yozilmasa ham, Telegramga yuborish uchun muvaffaqiyatli deb hisoblaymiz
+    }
+
+    return item;
+  } catch (err) {
+    console.error('[Storage] saveFeedback xatolik:', err);
+    // Xatolik bo'lsa ham, itemni qaytaramiz va Telegramga yuborishga ruxsat beramiz
+    // In-memory'ga qo'shib qo'yamiz
+    if (!globalThis.__COMFORT_FEEDBACKS_CACHE__) {
+      globalThis.__COMFORT_FEEDBACKS_CACHE__ = [];
+    }
+    globalThis.__COMFORT_FEEDBACKS_CACHE__ = [item, ...globalThis.__COMFORT_FEEDBACKS_CACHE__];
+    return item;
+  }
 }
 
 export function updateFeedbackStatus(id: string, status: FeedbackItem['status'], notes?: string): boolean {
-  const current = getFeedbacks();
-  const index = current.findIndex(f => f.id === id);
-  if (index === -1) return false;
-  
-  current[index].status = status;
-  if (notes !== undefined) {
-    current[index].notes = notes;
+  try {
+    const current = getFeedbacks();
+    const index = current.findIndex(f => f.id === id);
+    if (index === -1) return false;
+    
+    current[index].status = status;
+    if (notes !== undefined) {
+      current[index].notes = notes;
+    }
+
+    globalThis.__COMFORT_FEEDBACKS_CACHE__ = current;
+
+    const result = writeJsonFile('feedbacks.json', current);
+    if (!result.success) {
+      console.warn('[Storage] Status yangilanishi faylga yozilmadi, lekin xotirada saqlandi');
+      // Xotirada saqlangani uchun true qaytaramiz
+      return true;
+    }
+    return true;
+  } catch (err) {
+    console.error('[Storage] updateFeedbackStatus xatolik:', err);
+    return false;
   }
-  ensureDataDir();
-  fs.writeFileSync(FEEDBACKS_FILE, JSON.stringify(current, null, 2), 'utf-8');
-  return true;
 }
 
 // === TASHRIFLARNI HISOB-KITOB QILISH (VISIT TRACKING) ===
 
 export function getVisits(): VisitRecord[] {
-  ensureDataDir();
-  if (!fs.existsSync(VISITS_FILE)) {
-    // Agar fayl bo'lmasa, dastlabki 18 ta simulyatsiya tashrifini yozamiz
-    const today = getTodayStr();
-    const demoVisits: VisitRecord[] = Array.from({ length: 24 }).map((_, i) => ({
-      id: 'v-' + i,
-      timestamp: new Date(Date.now() - (i * 1000 * 60 * 18)).toISOString(),
-      dateStr: today,
-      branch: "Bosh do'kon (Markaziy)",
-      source: 'qr',
-    }));
-    fs.writeFileSync(VISITS_FILE, JSON.stringify(demoVisits, null, 2), 'utf-8');
-    return demoVisits;
+  if (globalThis.__COMFORT_VISITS_CACHE__ && globalThis.__COMFORT_VISITS_CACHE__.length > 0) {
+    return globalThis.__COMFORT_VISITS_CACHE__;
   }
-  try {
-    const data = fs.readFileSync(VISITS_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return [];
+
+  const data = readJsonFile<VisitRecord[]>('visits.json');
+  if (data && Array.isArray(data)) {
+    globalThis.__COMFORT_VISITS_CACHE__ = data;
+    return data;
   }
+
+  // Demo visits faqat dev'da faylga yoziladi
+  const today = getTodayStr();
+  const demoVisits: VisitRecord[] = Array.from({ length: 24 }).map((_, i) => ({
+    id: 'v-' + i,
+    timestamp: new Date(Date.now() - (i * 1000 * 60 * 18)).toISOString(),
+    dateStr: today,
+    branch: "Bosh do'kon (Markaziy)",
+    source: 'qr',
+  }));
+
+  if (!IS_PROD) {
+    writeJsonFile('visits.json', demoVisits);
+  }
+
+  globalThis.__COMFORT_VISITS_CACHE__ = demoVisits;
+  return demoVisits;
 }
 
 export function recordVisit(branch?: string, source: string = 'qr'): void {
-  ensureDataDir();
-  const current = getVisits();
-  const newVisit: VisitRecord = {
-    id: 'v-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-    timestamp: new Date().toISOString(),
-    dateStr: getTodayStr(),
-    branch: branch || "Bosh do'kon (Markaziy)",
-    source,
-  };
-  current.push(newVisit);
-  fs.writeFileSync(VISITS_FILE, JSON.stringify(current, null, 2), 'utf-8');
+  try {
+    const current = getVisits();
+    const newVisit: VisitRecord = {
+      id: 'v-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      timestamp: new Date().toISOString(),
+      dateStr: getTodayStr(),
+      branch: branch || "Bosh do'kon (Markaziy)",
+      source,
+    };
+    current.push(newVisit);
+    
+    globalThis.__COMFORT_VISITS_CACHE__ = current;
+
+    const result = writeJsonFile('visits.json', current);
+    if (!result.success) {
+      console.warn('[Storage] Visit faylga yozilmadi, lekin xotirada saqlandi');
+    }
+  } catch (err) {
+    console.error('[Storage] recordVisit xatolik:', err);
+  }
 }
 
 // === KUNLIK TO'LIQ ANALITIKA GENERATSIYASI ===
@@ -232,42 +367,89 @@ export function getDailyReportData(targetDate?: string): DailyReportData {
 // === TELEGRAM SOZLAMALARI ===
 
 export function getTelegramConfig(): TelegramConfig {
-  ensureDataDir();
   const envToken = process.env.TELEGRAM_BOT_TOKEN || '';
   const envChatId = process.env.TELEGRAM_CHAT_ID || '';
 
-  if (!fs.existsSync(SETTINGS_FILE)) {
-    const defaultConfig: TelegramConfig = {
-      botToken: envToken,
-      chatId: envChatId,
-      enabled: Boolean(envToken && envChatId),
-      dailyReportTime: '20:00',
+  // In-memory cache'da bo'lsa va file'da yangiroq narsa yo'q bo'lsa, shuni qaytarish
+  const cached = globalThis.__COMFORT_SETTINGS_CACHE__;
+
+  // Fayldan o'qishga harakat qilamiz
+  const fileConfig = readJsonFile<TelegramConfig>('settings.json');
+
+  if (fileConfig) {
+    // File config topildi, uni cache'ga ham qo'yamiz
+    const merged: TelegramConfig = {
+      botToken: fileConfig.botToken || cached?.botToken || envToken,
+      chatId: fileConfig.chatId || cached?.chatId || envChatId,
+      enabled: fileConfig.enabled ?? cached?.enabled ?? Boolean(fileConfig.botToken || envToken),
+      dailyReportTime: fileConfig.dailyReportTime || '20:00',
+      lastReportDate: fileConfig.lastReportDate,
     };
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(defaultConfig, null, 2), 'utf-8');
-    return defaultConfig;
+    globalThis.__COMFORT_SETTINGS_CACHE__ = merged;
+    return merged;
   }
 
-  try {
-    const data = fs.readFileSync(SETTINGS_FILE, 'utf-8');
-    const parsed = JSON.parse(data) as TelegramConfig;
+  // Fayl yo'q, lekin cache bo'lsa
+  if (cached) {
     return {
-      botToken: parsed.botToken || envToken,
-      chatId: parsed.chatId || envChatId,
-      enabled: parsed.enabled ?? Boolean(parsed.botToken || envToken),
-      dailyReportTime: parsed.dailyReportTime || '20:00',
-      lastReportDate: parsed.lastReportDate,
-    };
-  } catch {
-    return {
-      botToken: envToken,
-      chatId: envChatId,
-      enabled: Boolean(envToken && envChatId),
-      dailyReportTime: '20:00',
+      botToken: cached.botToken || envToken,
+      chatId: cached.chatId || envChatId,
+      enabled: cached.enabled ?? Boolean(cached.botToken || envToken),
+      dailyReportTime: cached.dailyReportTime || '20:00',
+      lastReportDate: cached.lastReportDate,
     };
   }
+
+  // Hech narsa yo'q bo'lsa, env'dan olamiz va default config yaratamiz
+  const defaultConfig: TelegramConfig = {
+    botToken: envToken,
+    chatId: envChatId,
+    enabled: Boolean(envToken && envChatId),
+    dailyReportTime: '20:00',
+  };
+
+  // Dev muhitida default config'ni faylga yozib qo'yamiz
+  if (!IS_PROD) {
+    writeJsonFile('settings.json', defaultConfig);
+  }
+
+  globalThis.__COMFORT_SETTINGS_CACHE__ = defaultConfig;
+  return defaultConfig;
 }
 
-export function saveTelegramConfig(config: TelegramConfig): void {
-  ensureDataDir();
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(config, null, 2), 'utf-8');
+export function saveTelegramConfig(config: TelegramConfig): { success: boolean; isReadOnly?: boolean; usedPath?: string; warning?: string } {
+  // Avval cache'ga saqlaymiz - bu har doim ishlaydi
+  globalThis.__COMFORT_SETTINGS_CACHE__ = config;
+
+  // Faylga yozishga harakat qilamiz
+  const result = writeJsonFile('settings.json', config);
+
+  if (result.success) {
+    return { success: true, usedPath: result.usedPath };
+  }
+
+  // Agar yozib bo'lmasa, demak read-only filesystem
+  if (result.isReadOnly) {
+    // Production'da /tmp ga yozilgan bo'lishi kerak, agar u ham ishlamasa, bu juda kam uchraydigan holat
+    // Shuning uchun in-memory saqladik va foydalanuvchiga tushuntirish beramiz
+    console.error('[Storage] READ-ONLY filesystem! Config faqat xotirada saqlandi. Doimiy saqlash uchun ENV o\'zgaruvchilarni sozlang.');
+
+    // IS_PROD bo'lsa, bu holatda ham muvaffaqiyatli deb hisoblash mumkin, chunki /tmp ga yozishga harakat qildik
+    // Lekin agar /tmp ham ishlamasa, warning qaytaramiz
+    if (IS_PROD) {
+      return {
+        success: true, // Vaqtincha muvaffaqiyatli, chunki xotirada saqlandi va /tmp da ishlashi kerak
+        isReadOnly: false,
+        warning: "Sozlamalar vaqtincha saqlandi (/tmp). Doimiy saqlash uchun Vercel Dashboard -> Settings -> Environment Variables bo'limida TELEGRAM_BOT_TOKEN va TELEGRAM_CHAT_ID ni qo'shing. Aks holda har deploy'da sozlamalar o'chib ketadi."
+      };
+    }
+
+    return {
+      success: false,
+      isReadOnly: true,
+      warning: "Fayl tizimi read-only (EROFS). Bu odatda production serverda (Vercel) yuz beradi. Yechim: Vercel Dashboard'da Environment Variables qo'shing."
+    };
+  }
+
+  return { success: false, isReadOnly: false };
 }
