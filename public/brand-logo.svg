@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="1000" height="1000">
+  <!-- Oq fon va tashqi halqa -->
+  <circle cx="250" cy="250" r="240" fill="#ffffff" />
+  <circle cx="250" cy="250" r="232" fill="none" stroke="#1e3a8a" stroke-width="16" />
+  <circle cx="250" cy="250" r="165" fill="none" stroke="#1e3a8a" stroke-width="4.5" />
+
+  <!-- Matnlar -->
+  <text transform="rotate(-42, 250, 250) translate(250, 62)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="42" fill="#1e3a8a">C</text>
+  <text transform="rotate(-28, 250, 250) translate(250, 62)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="42" fill="#1e3a8a">O</text>
+  <text transform="rotate(-14, 250, 250) translate(250, 62)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="42" fill="#1e3a8a">M</text>
+  <text transform="rotate(0, 250, 250) translate(250, 62)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="42" fill="#1e3a8a">F</text>
+  <text transform="rotate(14, 250, 250) translate(250, 62)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="42" fill="#1e3a8a">O</text>
+  <text transform="rotate(28, 250, 250) translate(250, 62)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="42" fill="#1e3a8a">R</text>
+  <text transform="rotate(42, 250, 250) translate(250, 62)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="42" fill="#1e3a8a">T</text>
+  <text transform="rotate(42, 250, 250) translate(250, 442)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="40" fill="#1e3a8a">T</text>
+  <text transform="rotate(28, 250, 250) translate(250, 442)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="40" fill="#1e3a8a">E</text>
+  <text transform="rotate(14, 250, 250) translate(250, 442)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="40" fill="#1e3a8a">X</text>
+  <text transform="rotate(0, 250, 250) translate(250, 442)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="40" fill="#1e3a8a">T</text>
+  <text transform="rotate(-14, 250, 250) translate(250, 442)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="40" fill="#1e3a8a">I</text>
+  <text transform="rotate(-28, 250, 250) translate(250, 442)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="40" fill="#1e3a8a">L</text>
+  <text transform="rotate(-42, 250, 250) translate(250, 442)" text-anchor="middle" font-family="'DejaVu Serif', serif" font-weight="bold" font-size="40" fill="#1e3a8a">E</text>
+
+  <!-- Markazdagi Divan -->
+  <g transform="translate(250, 256)" fill="#1e3a8a">
+    <!-- Orqa suyanchiq: Chap va O'ng yostiqlar -->
+    <path d="M -62,-58 C -45,-70 2,-70 6,-54 L 6,10 L -66,10 L -66,-35 C -66,-48 -64,-55 -62,-58 Z" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+    <path d="M 6,-54 C 10,-68 64,-65 78,-48 C 82,-42 82, -20 80,10 L 6,10 Z" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+
+    <!-- O'tirgich -->
+    <path d="M -68,10 L 5,10 L 5,42 L -70,38 Z" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+    <path d="M 5,10 L 82,10 L 80,36 L 5,42 Z" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+
+    <!-- Chap qo'ltiq suyanchig'i -->
+    <path d="M -105,-25 C -105,-34 -98,-38 -88,-38 L -64,-34 C -56,-32 -54,-24 -54,-14 L -54,34 C -54,42 -60,46 -68,46 L -96,44 C -102,44 -105,38 -105,30 Z" stroke="#ffffff" stroke-width="4.5" stroke-linejoin="round" />
+
+    <!-- O'ng qo'ltiq suyanchig'i -->
+    <path d="M 80,-20 C 80,-28 84,-32 92,-32 L 104,-30 C 110,-28 112,-22 112,-14 L 110,26 C 110,34 104,38 98,38 L 80,36 Z" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+
+    <!-- Pastki asos karkasi -->
+    <path d="M -80,38 L 86,36 C 90,36 92,38 92,44 L 90,52 C 90,56 86,58 82,58 L -78,58 C -84,58 -86,54 -86,48 L -86,42 C -86,38 -82,38 -80,38 Z" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" />
+
+    <!-- Oyoqlar -->
+    <polygon points="-72,58 -60,58 -64,78 -78,78" stroke="#ffffff" stroke-width="1.5" />
+    <polygon points="-32,58 -22,58 -24,74 -35,74" stroke="#ffffff" stroke-width="1.5" />
+    <polygon points="45,58 56,58 54,74 43,74" stroke="#ffffff" stroke-width="1.5" />
+    <polygon points="68,58 78,58 84,78 72,78" stroke="#ffffff" stroke-width="1.5" />
+  </g>
+</svg>
