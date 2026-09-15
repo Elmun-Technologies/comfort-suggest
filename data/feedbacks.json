@@ -1,0 +1,44 @@
+[
+  {
+    "id": "fb-1789494363569-xyqf2",
+    "createdAt": "2026-09-15T17:46:03.569Z",
+    "type": "complaint",
+    "rating": 1,
+    "department": "cashier",
+    "storeBranch": "Bosh do'kon (Markaziy)",
+    "text": "Kassada bitta odamga 15 daqiqa vaqt ketdi, navbat juda katta bo'lib ketdi.",
+    "status": "new"
+  },
+  {
+    "id": "fb-demo-1",
+    "createdAt": "2026-09-15T17:01:00.991Z",
+    "type": "complaint",
+    "rating": 2,
+    "department": "warehouse",
+    "storeBranch": "Bosh do'kon (Markaziy)",
+    "text": "Omborda DSP listlarini yuklash uchun deyarli 40 daqiqa kutdim. Xodimlar navbatsiz yuk ortayotgandek tuyuldi. Iltimos, navbat tartibini yaxshilang.",
+    "status": "investigating",
+    "notes": "Ombor mudiriga ogohlantirish berildi, navbat nazorati kuchaytirilmoqda."
+  },
+  {
+    "id": "fb-demo-2",
+    "createdAt": "2026-09-15T14:46:00.991Z",
+    "type": "suggestion",
+    "rating": 4,
+    "department": "hardware",
+    "storeBranch": "2-filial (Mebelchilar bozori)",
+    "text": "Qora matli profillar va yashirin tortma mexanizmlarining (push-to-open) 450mm o'lchamdagisidan ko'proq olib kelsangiz yaxshi bo'lardi, doim tez tugab qolyapti.",
+    "status": "new"
+  },
+  {
+    "id": "fb-demo-3",
+    "createdAt": "2026-09-15T11:46:00.991Z",
+    "type": "praise",
+    "rating": 5,
+    "department": "staff",
+    "storeBranch": "Bosh do'kon (Markaziy)",
+    "text": "Furnitura bo'limidagi sotuvchi yigit (Alijon) juda yaxshi tushuntirdi. Yangi boshlovchi mebelchiman, kerakli barcha petlya va gazliftlarni tanlashda yordam berdi. Rahmat!",
+    "status": "resolved",
+    "notes": "Xodim rag'batlantirildi."
+  }
+]
