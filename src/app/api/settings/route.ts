@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTelegramConfig, saveTelegramConfig } from '@/lib/storage';
+import { requireAuth } from '@/lib/checkAuth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authError = requireAuth(req);
+  if (authError) return authError;
+
   const config = getTelegramConfig();
   const isProd = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
   const envToken = String(process.env.TELEGRAM_BOT_TOKEN || '').trim();
@@ -25,6 +29,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const authError = requireAuth(req);
+  if (authError) return authError;
+
   try {
     const body = await req.json();
     const { botToken, chatId, enabled } = body;

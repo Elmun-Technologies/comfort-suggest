@@ -295,13 +295,14 @@ export function getDailyReportData(targetDate?: string): DailyReportData {
   const suggestionsCount = feedbacksToAnalyze.filter(f => f.type === 'suggestion').length;
   const praisesCount = feedbacksToAnalyze.filter(f => f.type === 'praise').length;
 
-  const totalRating = feedbacksToAnalyze.reduce((acc, f) => acc + f.rating, 0);
+  const totalRating = feedbacksToAnalyze.reduce((acc, f) => acc + (f.rating || 3), 0);
   const avgRating = totalSubmissions > 0 ? Number((totalRating / totalSubmissions).toFixed(1)) : 5.0;
 
   // Bo'limlar taqsimoti
   const deptMap: Record<string, number> = {};
   feedbacksToAnalyze.forEach(f => {
-    deptMap[f.department] = (deptMap[f.department] || 0) + 1;
+    const dept = f.department || 'other';
+    deptMap[dept] = (deptMap[dept] || 0) + 1;
   });
   const topDepartments = Object.entries(deptMap)
     .sort((a, b) => b[1] - a[1])
@@ -313,7 +314,7 @@ export function getDailyReportData(targetDate?: string): DailyReportData {
   // Mijoz rollari
   const roleMap: Record<string, number> = {};
   feedbacksToAnalyze.forEach(f => {
-    const r = f.clientRole || 'master';
+    const r = f.clientRole || 'anonim';
     roleMap[r] = (roleMap[r] || 0) + 1;
   });
   const clientRolesBreakdown = Object.entries(roleMap).map(([roleId, count]) => {
@@ -321,7 +322,7 @@ export function getDailyReportData(targetDate?: string): DailyReportData {
     return {
       role: r ? r.title : roleId,
       count,
-      percentage: Math.round((count / totalSubmissions) * 100),
+      percentage: totalSubmissions > 0 ? Math.round((count / totalSubmissions) * 100) : 0,
     };
   });
 

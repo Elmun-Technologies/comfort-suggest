@@ -24,13 +24,31 @@ export default function SettingsPage() {
   const [enabled, setEnabled] = useState(true);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [authChecking, setAuthChecking] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [isRegisteringWebhook, setIsRegisteringWebhook] = useState(false);
 
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning'; text: string; details?: string[] } | null>(null);
   const [meta, setMeta] = useState<any>(null);
 
+  // Auth tekshirish
   useEffect(() => {
+    fetch('/api/auth/check')
+      .then((res) => {
+        if (!res.ok) {
+          window.location.href = '/login';
+        } else {
+          setAuthChecking(false);
+        }
+      })
+      .catch(() => {
+        window.location.href = '/login';
+      });
+  }, []);
+
+  useEffect(() => {
+    if (authChecking) return;
     fetch('/api/settings')
       .then((res) => res.json())
       .then((data) => {
@@ -43,7 +61,7 @@ export default function SettingsPage() {
       })
       .catch((err) => console.error(err))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [authChecking]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,7 +158,25 @@ export default function SettingsPage() {
     }
   };
 
-  if (isLoading) {
+  const handleRegisterWebhook = async () => {
+    setIsRegisteringWebhook(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/telegram-webhook?action=register');
+      const data = await res.json();
+      if (data.success) {
+        setMessage({ type: 'success', text: data.message || 'Webhook muvaffaqiyatli o\'rnatildi! Endi guruhda /stats, /new, /report buyruqlarini ishlatishingiz mumkin.' });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Webhook o\'rnatishda xatolik' });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Xatolik' });
+    } finally {
+      setIsRegisteringWebhook(false);
+    }
+  };
+
+  if (authChecking || isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
@@ -301,15 +337,27 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={handleTest}
-              disabled={isTesting || !botToken || !chatId}
-              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-blue-400 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all disabled:opacity-40"
-            >
-              {isTesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              <span>Guruhga Test Xabari Yuborish</span>
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleTest}
+                disabled={isTesting || !botToken || !chatId}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-blue-400 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all disabled:opacity-40"
+              >
+                {isTesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                <span>Test Xabar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleRegisterWebhook}
+                disabled={isRegisteringWebhook || !botToken || !chatId}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-emerald-400 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all disabled:opacity-40"
+              >
+                {isRegisteringWebhook ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquare className="w-3.5 h-3.5" />}
+                <span>Guruh Buyruqlarini Yoqish</span>
+              </button>
+            </div>
 
             <button
               type="submit"
@@ -317,7 +365,7 @@ export default function SettingsPage() {
               className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition-all shadow-md shadow-blue-600/30 disabled:opacity-50"
             >
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              <span>Sozlamalarni Saqlash</span>
+              <span>Saqlash</span>
             </button>
           </div>
 
@@ -327,6 +375,35 @@ export default function SettingsPage() {
             </p>
           )}
         </form>
+
+        {/* Telegram guruh buyruqlari */}
+        <div className="bg-slate-900/60 border border-emerald-900/40 rounded-3xl p-6 space-y-4">
+          <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+            <MessageSquare className="w-4 h-4" />
+            <span>Guruh Buyruqlari (Adminlar uchun)</span>
+          </div>
+          <div className="space-y-2 text-xs text-slate-300">
+            <p>Botni guruhga qo'shgandan va &quot;Guruh Buyruqlarini Yoqish&quot; tugmasini bosganingizdan so'ng, guruhda quyidagi buyruqlar ishlaydi:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                <code className="text-emerald-400 font-bold">/stats</code>
+                <p className="text-slate-400 mt-1">Umumiy statistika (nechta murojaat, turlar bo'yicha)</p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                <code className="text-emerald-400 font-bold">/new</code>
+                <p className="text-slate-400 mt-1">Oxirgi yangi (ko'rilmagan) murojaatlar</p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                <code className="text-emerald-400 font-bold">/report</code>
+                <p className="text-slate-400 mt-1">Kunlik to'liq analitik hisobot</p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                <code className="text-emerald-400 font-bold">/help</code>
+                <p className="text-slate-400 mt-1">Yordam va buyruqlar ro'yxati</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4">
           <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider">

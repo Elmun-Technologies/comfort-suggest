@@ -1,5 +1,19 @@
 [
   {
+    "id": "fb-1789552572736-u9mb3",
+    "createdAt": "2026-09-16T09:56:12.736Z",
+    "type": "complaint",
+    "text": "Kesimda navbat kopek",
+    "status": "new"
+  },
+  {
+    "id": "fb-1789552290907-23wby",
+    "createdAt": "2026-09-16T09:51:30.908Z",
+    "type": "suggestion",
+    "text": "Yangi mato turi kerak, bukle matosi juda yoqdi",
+    "status": "new"
+  },
+  {
     "id": "fb-1789496297391-5l80q",
     "createdAt": "2026-09-15T18:18:17.391Z",
     "type": "complaint",

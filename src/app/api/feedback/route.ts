@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFeedbacks, getTelegramConfig, saveFeedback } from '@/lib/storage';
 import { sendFeedbackToTelegram } from '@/lib/telegram';
 import { FeedbackItem } from '@/types';
+import { requireAuth } from '@/lib/checkAuth';
 
 export async function GET(req: NextRequest) {
+  const authError = requireAuth(req);
+  if (authError) return authError;
+
   try {
     const feedbacks = getFeedbacks();
     return NextResponse.json({ success: true, data: feedbacks });
@@ -32,16 +36,16 @@ export async function POST(req: NextRequest) {
       imageUrl,
     } = body;
 
-    if (!type || !rating || !department) {
+    if (!type || !['complaint', 'suggestion', 'praise'].includes(type)) {
       return NextResponse.json(
-        { success: false, error: "Majburiy maydonlar to'ldirilmadi" },
+        { success: false, error: "Murojaat turini tanlang" },
         { status: 400 }
       );
     }
 
-    if (!text && !audioUrl && !imageUrl && !requestedProduct && (!quickTags || quickTags.length === 0)) {
+    if (!text || !text.trim()) {
       return NextResponse.json(
-        { success: false, error: "Iltimos, fikringizni yozing yoki ovozli xabar qoldiring" },
+        { success: false, error: "Fikringizni yozing" },
         { status: 400 }
       );
     }
@@ -50,15 +54,7 @@ export async function POST(req: NextRequest) {
       id: 'fb-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
       createdAt: new Date().toISOString(),
       type,
-      rating: Number(rating) as any,
-      department,
-      storeBranch: storeBranch || "Bosh do'kon (Markaziy)",
-      clientRole: clientRole || 'master',
-      requestedProduct: requestedProduct ? requestedProduct.trim() : undefined,
-      quickTags: Array.isArray(quickTags) ? quickTags : [],
-      text: (text || '').trim(),
-      audioUrl: audioUrl || undefined,
-      imageUrl: imageUrl || undefined,
+      text: text.trim(),
       status: 'new',
     };
 
