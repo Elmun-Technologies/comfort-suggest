@@ -5,7 +5,7 @@ import { buildQrPng, publicAsset, BRAND_BLUE } from './qr';
 export const POSTER_WIDTH = 2480;
 export const POSTER_HEIGHT = 3508;
 
-const INK = BRAND_BLUE; // #1e3a8a
+const INK = BRAND_BLUE; // #2b3789 (rasmiy logotip ko'ki)
 const DARK = '#0f172a';
 const GRAY = '#475569';
 const LGRAY = '#64748b';
@@ -51,7 +51,7 @@ export async function generatePosterImage({ url, withLogo, branch }: PosterOptio
 
   <!-- Tashqi ramka (printer chizig'i) -->
   <rect x="70" y="70" width="2340" height="3368" rx="48" fill="none" stroke="${INK}" stroke-width="10"/>
-  <rect x="94" y="94" width="2292" height="3320" rx="36" fill="none" stroke="#bfdbfe" stroke-width="4"/>
+  <rect x="94" y="94" width="2292" height="3320" rx="36" fill="none" stroke="#c7cbe8" stroke-width="4"/>
 
   <!-- ===== YUQORI BREND BLOKI ===== -->
   <!-- (logo sharp bilan joylashtiriladi) -->
@@ -65,7 +65,7 @@ export async function generatePosterImage({ url, withLogo, branch }: PosterOptio
   <line x1="130" y1="470" x2="2350" y2="470" stroke="${INK}" stroke-width="10"/>
 
   <!-- ===== SARLAVHA BLOKI ===== -->
-  <rect x="660" y="560" width="1160" height="104" rx="52" fill="#dbeafe" stroke="#bfdbfe" stroke-width="4"/>
+  <rect x="660" y="560" width="1160" height="104" rx="52" fill="#e8eaf6" stroke="#c7cbe8" stroke-width="4"/>
   <text x="1240" y="627" text-anchor="middle" font-family="${FONT}" font-size="44" font-weight="800" fill="${INK}">Hurmatli Mebel ustalari va Xaridorlar!</text>
 
   <text x="1240" y="855" text-anchor="middle" font-family="${FONT}" font-size="110" font-weight="900" fill="${DARK}">E'tiroz yoki Taklifingiz bormi?</text>
@@ -99,12 +99,12 @@ export async function generatePosterImage({ url, withLogo, branch }: PosterOptio
   <text x="1987" y="2613" text-anchor="middle" font-family="${FONT}" font-size="38" font-weight="600" fill="${LGRAY}">Telegramga boradi</text>
 
   <!-- ===== ANONIMLIK KAFOLATI ===== -->
-  <rect x="130" y="2740" width="2220" height="310" rx="40" fill="#eff6ff" stroke="#bfdbfe" stroke-width="6"/>
+  <rect x="130" y="2740" width="2220" height="310" rx="40" fill="#eef0fa" stroke="#c7cbe8" stroke-width="6"/>
   <rect x="190" y="2815" width="130" height="130" rx="30" fill="${INK}"/>
   <path d="M 255,2840 L 292,2854 V 2885 C 292,2912 275,2928 255,2936 C 235,2928 218,2912 218,2885 V 2854 Z" fill="none" stroke="#ffffff" stroke-width="8" stroke-linejoin="round"/>
   <path d="M 240,2886 L 251,2897 L 271,2869" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="372" y="2882" font-family="${FONT}" font-size="56" font-weight="900" fill="#172554">100% Anonimlik kafolatlanadi</text>
-  <text x="372" y="2960" font-family="${FONT}" font-size="44" font-weight="600" fill="#1e40af">Telefon yoki ism so'ralmaydi. Hech narsadan tortinmay ochiq fikr bildiring!</text>
+  <text x="372" y="2882" font-family="${FONT}" font-size="56" font-weight="900" fill="#171d4d">100% Anonimlik kafolatlanadi</text>
+  <text x="372" y="2960" font-family="${FONT}" font-size="44" font-weight="600" fill="#242e73">Telefon yoki ism so'ralmaydi. Hech narsadan tortinmay ochiq fikr bildiring!</text>
 
   <!-- ===== PASTKI QISM ===== -->
   <line x1="130" y1="3200" x2="2350" y2="3200" stroke="#e2e8f0" stroke-width="6"/>

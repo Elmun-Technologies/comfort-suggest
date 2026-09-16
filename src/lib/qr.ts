@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 
 /** Comfort Textile asosiy ko'k rangi */
-export const BRAND_BLUE = '#1e3a8a';
+export const BRAND_BLUE = '#2b3789';
 
 /** Rasm manzilini (public ichida) qaytaradi */
 export function publicAsset(fileName: string): string {

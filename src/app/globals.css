@@ -1,10 +1,34 @@
 @import "tailwindcss";
 
+/* ===== Comfort Textile brend ranglari (rasmiy logotipdan olingan) ===== */
 :root {
-  --background: #090e1a;
+  --brand-blue: #2b3789;        /* logotipdagi asosiy ko'k */
+  --brand-blue-dark: #1f2866;   /* to'q ko'k */
+  --brand-blue-light: #3d4bb5;  /* hover / yorug' ko'k */
+  --brand-blue-soft: #e8eaf6;   /* och fon */
+  --background: #0a0d1f;
   --foreground: #f8fafc;
-  --primary-blue: #1d3b8a;
-  --primary-light: #2563eb;
+  --primary-blue: var(--brand-blue);
+  --primary-light: var(--brand-blue-light);
+}
+
+/* Tailwind rang tokenlari: `blue-*` klasslari brend ko'kiga moslashtirilgan */
+@theme inline {
+  --color-blue-50: #eef0fa;
+  --color-blue-100: #e8eaf6;
+  --color-blue-200: #c7cbe8;
+  --color-blue-300: #9ea6d6;
+  --color-blue-400: #7580c4;
+  --color-blue-500: #4c5aab;
+  --color-blue-600: #2b3789;
+  --color-blue-700: #242e73;
+  --color-blue-800: #1f2866;
+  --color-blue-900: #171d4d;
+  --color-blue-950: #0f1333;
+  --color-brand: #2b3789;
+  --color-brand-dark: #1f2866;
+  --color-brand-light: #3d4bb5;
+  --color-brand-soft: #e8eaf6;
 }
 
 body {
@@ -24,11 +48,11 @@ body {
   background: #0b1329;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e3a8a;
+  background: #2b3789;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2563eb;
+  background: #3d4bb5;
 }
 
 /* Print Styles */
