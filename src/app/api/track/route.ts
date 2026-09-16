@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getVisits, recordVisit } from '@/lib/storage';
+import { requireAuth } from '@/lib/checkAuth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,7 +13,10 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authError = requireAuth(req);
+  if (authError) return authError;
+
   try {
     const visits = getVisits();
     return NextResponse.json({ success: true, count: visits.length, data: visits });

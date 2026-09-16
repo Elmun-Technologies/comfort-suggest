@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDailyReportData, getTelegramConfig } from '@/lib/storage';
 import { sendDailyReportToTelegram } from '@/lib/telegram';
+import { requireAuth } from '@/lib/checkAuth';
 
 export async function GET(req: NextRequest) {
+  const authError = requireAuth(req);
+  if (authError) return authError;
+
   try {
     const { searchParams } = new URL(req.url);
     const date = searchParams.get('date') || undefined;
@@ -14,6 +18,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const authError = requireAuth(req);
+  if (authError) return authError;
+
   try {
     const body = await req.json().catch(() => ({}));
     const { date } = body;

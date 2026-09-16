@@ -24,6 +24,7 @@ import {
   Building2,
   Volume2,
   Image as ImageIcon,
+  LogOut,
 } from 'lucide-react';
 import { DailyReportData, FeedbackDepartment, FeedbackItem, FeedbackStatus } from '@/types';
 import { CLIENT_ROLES, DEPARTMENTS, RATINGS, STORE_NAME } from '@/lib/constants';
@@ -32,12 +33,28 @@ export default function AdminPage() {
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [reportData, setReportData] = useState<DailyReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecking, setAuthChecking] = useState(true);
   const [isSendingReport, setIsSendingReport] = useState(false);
   const [reportResult, setReportResult] = useState<{ success: boolean; message?: string } | null>(null);
 
   const [filterType, setFilterType] = useState<string>('all');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // Auth tekshirish
+  useEffect(() => {
+    fetch('/api/auth/check')
+      .then((res) => {
+        if (!res.ok) {
+          window.location.href = '/login';
+        } else {
+          setAuthChecking(false);
+        }
+      })
+      .catch(() => {
+        window.location.href = '/login';
+      });
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -59,8 +76,8 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!authChecking) loadData();
+  }, [authChecking]);
 
   const handleSendReportNow = async () => {
     setIsSendingReport(true);
@@ -117,15 +134,25 @@ export default function AdminPage() {
     return true;
   });
 
-  const getDeptName = (id: FeedbackDepartment) => {
+  const getDeptName = (id?: FeedbackDepartment) => {
+    if (!id) return 'Umumiy';
     const d = DEPARTMENTS.find((item) => item.id === id);
     return d ? d.title : id;
   };
 
   const getRoleTitle = (roleId?: string) => {
+    if (!roleId) return '';
     const r = CLIENT_ROLES.find((item) => item.id === roleId);
     return r ? r.title : 'Mijoz';
   };
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
@@ -163,19 +190,22 @@ export default function AdminPage() {
               <RefreshCw className="w-4 h-4" />
             </button>
             <Link
-              href="/poster"
-              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5"
-            >
-              <QrCode className="w-3.5 h-3.5 text-blue-400" />
-              <span className="hidden sm:inline">QR Plakat</span>
-            </Link>
-            <Link
               href="/admin/settings"
               className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5"
             >
               <Settings className="w-3.5 h-3.5 text-slate-400" />
               <span>Sozlamalar</span>
             </Link>
+            <button
+              onClick={async () => {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/login';
+              }}
+              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-400" />
+              <span>Chiqish</span>
+            </button>
           </div>
         </div>
       </header>
@@ -409,15 +439,19 @@ export default function AdminPage() {
                         {getRoleTitle(item.clientRole)}
                       </span>
 
-                      <span className="text-xs px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300">
-                        {getDeptName(item.department)}
-                      </span>
+                      {item.department && (
+                        <span className="text-xs px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300">
+                          {getDeptName(item.department)}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-amber-400 font-bold bg-slate-800 px-2 py-0.5 rounded-lg">
-                        {ratingData?.emoji} {item.rating}/5
-                      </span>
+                      {item.rating && ratingData && (
+                        <span className="text-xs text-amber-400 font-bold bg-slate-800 px-2 py-0.5 rounded-lg">
+                          {ratingData.emoji} {item.rating}/5
+                        </span>
+                      )}
                       <span className="text-xs text-slate-500 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {new Date(item.createdAt).toLocaleTimeString('uz-UZ', {
@@ -454,7 +488,7 @@ export default function AdminPage() {
                     </p>
                   )}
 
-                  {/* Audio va Rasm */}
+                  {/* Audio va Rasm (eski murojaatlarda bo'lishi mumkin) */}
                   {(item.audioUrl || item.imageUrl) && (
                     <div className="flex flex-wrap items-center gap-3 pt-1">
                       {item.audioUrl && (

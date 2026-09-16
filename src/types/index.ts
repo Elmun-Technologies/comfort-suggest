@@ -25,17 +25,17 @@ export interface FeedbackItem {
   id: string;
   createdAt: string;
   type: FeedbackType;
-  rating: RatingScore;
-  department: FeedbackDepartment;
-  storeBranch: string;
-  clientRole: ClientRole;
-  requestedProduct?: string; // Topa olmagan yoki kerakli mato/furnitura
-  quickTags?: string[]; // Tezkor teglar
+  rating?: RatingScore;
+  department?: FeedbackDepartment;
+  storeBranch?: string;
+  clientRole?: ClientRole;
+  requestedProduct?: string;
+  quickTags?: string[];
   text: string;
-  audioUrl?: string; // Data URL or audio file path
-  imageUrl?: string; // Data URL or image file path
+  audioUrl?: string;
+  imageUrl?: string;
   status: FeedbackStatus;
-  notes?: string; // Admin ichki qaydlari
+  notes?: string;
 }
 
 export interface VisitRecord {
@@ -68,4 +68,9 @@ export interface TelegramConfig {
   enabled: boolean;
   dailyReportTime?: string; // '20:00'
   lastReportDate?: string;
+}
+
+export interface AdminAuth {
+  login: string;
+  password: string;
 }

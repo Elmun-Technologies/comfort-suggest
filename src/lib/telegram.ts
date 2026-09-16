@@ -14,12 +14,14 @@ function getTypeText(type: FeedbackItem['type']): string {
   }
 }
 
-function getDepartmentTitle(id: FeedbackItem['department']): string {
+function getDepartmentTitle(id?: string): string {
+  if (!id) return 'Umumiy';
   const d = DEPARTMENTS.find(dep => dep.id === id);
   return d ? d.title : id;
 }
 
-function getRatingStars(score: number): string {
+function getRatingStars(score?: number): string {
+  if (!score) return '';
   const r = RATINGS.find(item => item.score === score);
   const stars = '★'.repeat(score) + '☆'.repeat(5 - score);
   return `${r?.emoji || ''} ${stars} (${score}/5 — ${r?.label || ''})`;
@@ -74,13 +76,15 @@ export async function sendFeedbackToTelegram(
   const ratingText = getRatingStars(feedback.rating);
 
   // Qo'shimcha ma'lumotlar
-  const roleText = {
+  const roleMap: Record<string, string> = {
     master: '🔨 Mebel ustasi',
     workshop: '🏭 Mebel sexi',
     upholstery: '🛋 Peretyajka (Qoplovchi)',
     client: '🏠 Xususiy xaridor',
     designer: '📐 Dizayner',
-  }[feedback.clientRole] || 'Mijoz';
+    anonim: '👤 Anonim',
+  };
+  const roleText = feedback.clientRole ? (roleMap[feedback.clientRole] || '👤 Mijoz') : '👤 Anonim';
 
   const requestedText = feedback.requestedProduct
     ? `\n<b>🔍 Kerakli / Yetishmayotgan tovar:</b> <code>${escapeHtml(feedback.requestedProduct)}</code>`
@@ -94,14 +98,12 @@ export async function sendFeedbackToTelegram(
 <b>🛋 COMFORT TEXTILE — ANONIM MUROJAAT</b>
 ━━━━━━━━━━━━━━━━━━━━
 <b>👤 Kimdan:</b> ${roleText}
-<b>📌 Turi:</b> ${typeText}
-<b>🏬 Yoʻnalish:</b> ${deptTitle}
-<b>⭐ Baho:</b> ${ratingText}
+<b>📌 Turi:</b> ${typeText}${feedback.department ? `\n<b>🏬 Yoʻnalish:</b> ${deptTitle}` : ''}${feedback.rating ? `\n<b>⭐ Baho:</b> ${ratingText}` : ''}
 <b>📍 Filial:</b> ${feedback.storeBranch || "Bosh do'kon"}
 <b>🕒 Vaqt:</b> ${formattedDate}${requestedText}${tagsText}
 
 <b>📝 Murojaat mazmuni:</b>
-<i>${escapeHtml(feedback.text || "(Faqat ovozli xabar yoki rasm)")}</i>
+<i>${escapeHtml(feedback.text || "(Bo'sh)")}</i>
 
 ━━━━━━━━━━━━━━━━━━━━
 🛡 <i>Ushbu murojaat do'kondagi QR-kod orqali 100% anonim yuborildi.</i>

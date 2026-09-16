@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateFeedbackStatus } from '@/lib/storage';
+import { requireAuth } from '@/lib/checkAuth';
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = requireAuth(req);
+  if (authError) return authError;
+
   try {
     const { id } = await params;
     const body = await req.json();
