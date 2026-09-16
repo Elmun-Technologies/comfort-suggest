@@ -4,9 +4,6 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Comfort Textile — Anonim Taklif va E'tirozlar",
   description: "Comfort Textile: mebel matolari, porolon va sifatli furnituralar bo'yicha anonim fikr-mulohaza markazi",
-  icons: {
-    icon: "/logo.png",
-  },
 };
 
 export const viewport: Viewport = {
@@ -14,7 +11,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#1d3b8a",
+  themeColor: "#2b3789",
 };
 
 export default function RootLayout({

@@ -17,7 +17,7 @@ export default function SuccessView({ onReset, feedbackType }: SuccessViewProps)
         particleCount: 70,
         spread: 60,
         origin: { y: 0.6 },
-        colors: ['#1d3b8a', '#2563eb', '#10b981', '#38bdf8'],
+        colors: ['#2b3789', '#3d4bb5', '#7580c4', '#10b981'],
       });
     } catch {
       // Ignore if confetti fails

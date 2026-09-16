@@ -7,7 +7,7 @@ Mebel matolari, divan mexanizmlari, porolon va furnitura do'konlari uchun mo'lja
 ## 🚀 Yangi Imkoniyatlar (v2.0)
 
 ### 1. ✨ Minimalist va Chaqqon Dizayn
-* **Yengil, zamonaviy va chalg'itmaydigan interfeys:** Ortiqcha og'ir ramkalar olib tashlandi, toza tipografika va rasmiy "Comfort Textile" qirollik ko'ki (`#1d3b8a`) uyg'unlashtirildi.
+* **Yengil, zamonaviy va chalg'itmaydigan interfeys:** Ortiqcha og'ir ramkalar olib tashlandi, toza tipografika va rasmiy "Comfort Textile" qirollik ko'ki (`#2b3789`) uyg'unlashtirildi.
 * **100% Mobil moslashuv:** Telefon ekranida bir soniyada yuklanadi va barmoq bilan bosishga qulay.
 
 ### 2. 🎯 Mijozlardan Chuqur Ma'lumotlarni "Sug'urib Olish":
